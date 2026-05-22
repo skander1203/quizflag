@@ -1,0 +1,281 @@
+import type { Country, Difficulty } from '../types';
+import { pickSimilarWrongCountries } from './flagSimilarity';
+import { DIFFICULTY_TIER } from '../utils/scoring';
+import { isValidIsoCode } from '../utils/flags';
+
+/** Tier 1 — Facile (20) · Tier 2 — Normal (+30) · Tier 3 — Difficile (+30) · Tier 4 — Extrême (+30) · Tier 5 — Impossible (reste) */
+export const COUNTRIES: Country[] = [
+  // —— Tier 1 : G20 + Europe occidentale (20) ——
+  { name_fr: 'France', iso_code: 'FR', flag_emoji: '🇫🇷', difficulty: 1 },
+  { name_fr: 'Allemagne', iso_code: 'DE', flag_emoji: '🇩🇪', difficulty: 1 },
+  { name_fr: 'États-Unis', iso_code: 'US', flag_emoji: '🇺🇸', difficulty: 1 },
+  { name_fr: 'Japon', iso_code: 'JP', flag_emoji: '🇯🇵', difficulty: 1 },
+  { name_fr: 'Brésil', iso_code: 'BR', flag_emoji: '🇧🇷', difficulty: 1 },
+  { name_fr: 'Italie', iso_code: 'IT', flag_emoji: '🇮🇹', difficulty: 1 },
+  { name_fr: 'Royaume-Uni', iso_code: 'GB', flag_emoji: '🇬🇧', difficulty: 1 },
+  { name_fr: 'Canada', iso_code: 'CA', flag_emoji: '🇨🇦', difficulty: 1 },
+  { name_fr: 'Australie', iso_code: 'AU', flag_emoji: '🇦🇺', difficulty: 1 },
+  { name_fr: 'Espagne', iso_code: 'ES', flag_emoji: '🇪🇸', difficulty: 1 },
+  { name_fr: 'Chine', iso_code: 'CN', flag_emoji: '🇨🇳', difficulty: 1 },
+  { name_fr: 'Inde', iso_code: 'IN', flag_emoji: '🇮🇳', difficulty: 1 },
+  { name_fr: 'Mexique', iso_code: 'MX', flag_emoji: '🇲🇽', difficulty: 1 },
+  { name_fr: 'Corée du Sud', iso_code: 'KR', flag_emoji: '🇰🇷', difficulty: 1 },
+  { name_fr: 'Argentine', iso_code: 'AR', flag_emoji: '🇦🇷', difficulty: 1 },
+  { name_fr: 'Russie', iso_code: 'RU', flag_emoji: '🇷🇺', difficulty: 1 },
+  { name_fr: 'Arabie saoudite', iso_code: 'SA', flag_emoji: '🇸🇦', difficulty: 1 },
+  { name_fr: 'Turquie', iso_code: 'TR', flag_emoji: '🇹🇷', difficulty: 1 },
+  { name_fr: 'Indonésie', iso_code: 'ID', flag_emoji: '🇮🇩', difficulty: 1 },
+  { name_fr: 'Afrique du Sud', iso_code: 'ZA', flag_emoji: '🇿🇦', difficulty: 1 },
+  // —— Tier 2 : pays connus (+30 → 50) ——
+  { name_fr: 'Pologne', iso_code: 'PL', flag_emoji: '🇵🇱', difficulty: 2 },
+  { name_fr: 'Pays-Bas', iso_code: 'NL', flag_emoji: '🇳🇱', difficulty: 2 },
+  { name_fr: 'Belgique', iso_code: 'BE', flag_emoji: '🇧🇪', difficulty: 2 },
+  { name_fr: 'Suisse', iso_code: 'CH', flag_emoji: '🇨🇭', difficulty: 2 },
+  { name_fr: 'Autriche', iso_code: 'AT', flag_emoji: '🇦🇹', difficulty: 2 },
+  { name_fr: 'Portugal', iso_code: 'PT', flag_emoji: '🇵🇹', difficulty: 2 },
+  { name_fr: 'Grèce', iso_code: 'GR', flag_emoji: '🇬🇷', difficulty: 2 },
+  { name_fr: 'Suède', iso_code: 'SE', flag_emoji: '🇸🇪', difficulty: 2 },
+  { name_fr: 'Norvège', iso_code: 'NO', flag_emoji: '🇳🇴', difficulty: 2 },
+  { name_fr: 'Danemark', iso_code: 'DK', flag_emoji: '🇩🇰', difficulty: 2 },
+  { name_fr: 'Finlande', iso_code: 'FI', flag_emoji: '🇫🇮', difficulty: 2 },
+  { name_fr: 'Égypte', iso_code: 'EG', flag_emoji: '🇪🇬', difficulty: 2 },
+  { name_fr: 'Nigeria', iso_code: 'NG', flag_emoji: '🇳🇬', difficulty: 2 },
+  { name_fr: 'Maroc', iso_code: 'MA', flag_emoji: '🇲🇦', difficulty: 2 },
+  { name_fr: 'Kenya', iso_code: 'KE', flag_emoji: '🇰🇪', difficulty: 2 },
+  { name_fr: 'Thaïlande', iso_code: 'TH', flag_emoji: '🇹🇭', difficulty: 2 },
+  { name_fr: 'Vietnam', iso_code: 'VN', flag_emoji: '🇻🇳', difficulty: 2 },
+  { name_fr: 'Philippines', iso_code: 'PH', flag_emoji: '🇵🇭', difficulty: 2 },
+  { name_fr: 'Pakistan', iso_code: 'PK', flag_emoji: '🇵🇰', difficulty: 2 },
+  { name_fr: 'Iran', iso_code: 'IR', flag_emoji: '🇮🇷', difficulty: 2 },
+  { name_fr: 'Israël', iso_code: 'IL', flag_emoji: '🇮🇱', difficulty: 2 },
+  { name_fr: 'Ukraine', iso_code: 'UA', flag_emoji: '🇺🇦', difficulty: 2 },
+  { name_fr: 'Irlande', iso_code: 'IE', flag_emoji: '🇮🇪', difficulty: 2 },
+  { name_fr: 'Chili', iso_code: 'CL', flag_emoji: '🇨🇱', difficulty: 2 },
+  { name_fr: 'Pérou', iso_code: 'PE', flag_emoji: '🇵🇪', difficulty: 2 },
+  { name_fr: 'Colombie', iso_code: 'CO', flag_emoji: '🇨🇴', difficulty: 2 },
+  { name_fr: 'Venezuela', iso_code: 'VE', flag_emoji: '🇻🇪', difficulty: 2 },
+  { name_fr: 'Nouvelle-Zélande', iso_code: 'NZ', flag_emoji: '🇳🇿', difficulty: 2 },
+  { name_fr: 'Cuba', iso_code: 'CU', flag_emoji: '🇨🇺', difficulty: 2 },
+  { name_fr: 'République tchèque', iso_code: 'CZ', flag_emoji: '🇨🇿', difficulty: 2 },
+  // —— Tier 3 : moins connus (+30 → 80) ——
+  { name_fr: 'Roumanie', iso_code: 'RO', flag_emoji: '🇷🇴', difficulty: 3 },
+  { name_fr: 'Hongrie', iso_code: 'HU', flag_emoji: '🇭🇺', difficulty: 3 },
+  { name_fr: 'Slovaquie', iso_code: 'SK', flag_emoji: '🇸🇰', difficulty: 3 },
+  { name_fr: 'Croatie', iso_code: 'HR', flag_emoji: '🇭🇷', difficulty: 3 },
+  { name_fr: 'Serbie', iso_code: 'RS', flag_emoji: '🇷🇸', difficulty: 3 },
+  { name_fr: 'Bulgarie', iso_code: 'BG', flag_emoji: '🇧🇬', difficulty: 3 },
+  { name_fr: 'Lituanie', iso_code: 'LT', flag_emoji: '🇱🇹', difficulty: 3 },
+  { name_fr: 'Lettonie', iso_code: 'LV', flag_emoji: '🇱🇻', difficulty: 3 },
+  { name_fr: 'Estonie', iso_code: 'EE', flag_emoji: '🇪🇪', difficulty: 3 },
+  { name_fr: 'Algérie', iso_code: 'DZ', flag_emoji: '🇩🇿', difficulty: 3 },
+  { name_fr: 'Tunisie', iso_code: 'TN', flag_emoji: '🇹🇳', difficulty: 3 },
+  { name_fr: 'Éthiopie', iso_code: 'ET', flag_emoji: '🇪🇹', difficulty: 3 },
+  { name_fr: 'Ghana', iso_code: 'GH', flag_emoji: '🇬🇭', difficulty: 3 },
+  { name_fr: 'Sénégal', iso_code: 'SN', flag_emoji: '🇸🇳', difficulty: 3 },
+  { name_fr: "Côte d'Ivoire", iso_code: 'CI', flag_emoji: '🇨🇮', difficulty: 3 },
+  { name_fr: 'RD Congo', iso_code: 'CD', flag_emoji: '🇨🇩', difficulty: 3 },
+  { name_fr: 'Tanzanie', iso_code: 'TZ', flag_emoji: '🇹🇿', difficulty: 3 },
+  { name_fr: 'Ouganda', iso_code: 'UG', flag_emoji: '🇺🇬', difficulty: 3 },
+  { name_fr: 'Irak', iso_code: 'IQ', flag_emoji: '🇮🇶', difficulty: 3 },
+  { name_fr: 'Liban', iso_code: 'LB', flag_emoji: '🇱🇧', difficulty: 3 },
+  { name_fr: 'Jordanie', iso_code: 'JO', flag_emoji: '🇯🇴', difficulty: 3 },
+  { name_fr: 'Kazakhstan', iso_code: 'KZ', flag_emoji: '🇰🇿', difficulty: 3 },
+  { name_fr: 'Ouzbékistan', iso_code: 'UZ', flag_emoji: '🇺🇿', difficulty: 3 },
+  { name_fr: 'Azerbaïdjan', iso_code: 'AZ', flag_emoji: '🇦🇿', difficulty: 3 },
+  { name_fr: 'Géorgie', iso_code: 'GE', flag_emoji: '🇬🇪', difficulty: 3 },
+  { name_fr: 'Arménie', iso_code: 'AM', flag_emoji: '🇦🇲', difficulty: 3 },
+  { name_fr: 'Bangladesh', iso_code: 'BD', flag_emoji: '🇧🇩', difficulty: 3 },
+  { name_fr: 'Sri Lanka', iso_code: 'LK', flag_emoji: '🇱🇰', difficulty: 3 },
+  { name_fr: 'Malaisie', iso_code: 'MY', flag_emoji: '🇲🇾', difficulty: 3 },
+  { name_fr: 'Singapour', iso_code: 'SG', flag_emoji: '🇸🇬', difficulty: 3 },
+  // —— Tier 4 : micro-États, îles (+30 → 110) ——
+  { name_fr: 'Monaco', iso_code: 'MC', flag_emoji: '🇲🇨', difficulty: 4 },
+  { name_fr: 'Andorre', iso_code: 'AD', flag_emoji: '🇦🇩', difficulty: 4 },
+  { name_fr: 'Liechtenstein', iso_code: 'LI', flag_emoji: '🇱🇮', difficulty: 4 },
+  { name_fr: 'Vatican', iso_code: 'VA', flag_emoji: '🇻🇦', difficulty: 4 },
+  { name_fr: 'Saint-Marin', iso_code: 'SM', flag_emoji: '🇸🇲', difficulty: 4 },
+  { name_fr: 'Malte', iso_code: 'MT', flag_emoji: '🇲🇹', difficulty: 4 },
+  { name_fr: 'Luxembourg', iso_code: 'LU', flag_emoji: '🇱🇺', difficulty: 4 },
+  { name_fr: 'Islande', iso_code: 'IS', flag_emoji: '🇮🇸', difficulty: 4 },
+  { name_fr: 'Maldives', iso_code: 'MV', flag_emoji: '🇲🇻', difficulty: 4 },
+  { name_fr: 'Fidji', iso_code: 'FJ', flag_emoji: '🇫🇯', difficulty: 4 },
+  { name_fr: 'Samoa', iso_code: 'WS', flag_emoji: '🇼🇸', difficulty: 4 },
+  { name_fr: 'Tonga', iso_code: 'TO', flag_emoji: '🇹🇴', difficulty: 4 },
+  { name_fr: 'Tuvalu', iso_code: 'TV', flag_emoji: '🇹🇻', difficulty: 4 },
+  { name_fr: 'Nauru', iso_code: 'NR', flag_emoji: '🇳🇷', difficulty: 4 },
+  { name_fr: 'Palau', iso_code: 'PW', flag_emoji: '🇵🇼', difficulty: 4 },
+  { name_fr: 'Kiribati', iso_code: 'KI', flag_emoji: '🇰🇮', difficulty: 4 },
+  { name_fr: 'Bhoutan', iso_code: 'BT', flag_emoji: '🇧🇹', difficulty: 4 },
+  { name_fr: 'Népal', iso_code: 'NP', flag_emoji: '🇳🇵', difficulty: 4 },
+  { name_fr: 'Mongolie', iso_code: 'MN', flag_emoji: '🇲🇳', difficulty: 4 },
+  { name_fr: 'Afghanistan', iso_code: 'AF', flag_emoji: '🇦🇫', difficulty: 4 },
+  { name_fr: 'Cambodge', iso_code: 'KH', flag_emoji: '🇰🇭', difficulty: 4 },
+  { name_fr: 'Laos', iso_code: 'LA', flag_emoji: '🇱🇦', difficulty: 4 },
+  { name_fr: 'Myanmar', iso_code: 'MM', flag_emoji: '🇲🇲', difficulty: 4 },
+  { name_fr: 'Paraguay', iso_code: 'PY', flag_emoji: '🇵🇾', difficulty: 4 },
+  { name_fr: 'Bolivie', iso_code: 'BO', flag_emoji: '🇧🇴', difficulty: 4 },
+  { name_fr: 'Uruguay', iso_code: 'UY', flag_emoji: '🇺🇾', difficulty: 4 },
+  { name_fr: 'Guatemala', iso_code: 'GT', flag_emoji: '🇬🇹', difficulty: 4 },
+  { name_fr: 'Honduras', iso_code: 'HN', flag_emoji: '🇭🇳', difficulty: 4 },
+  { name_fr: 'Costa Rica', iso_code: 'CR', flag_emoji: '🇨🇷', difficulty: 4 },
+  { name_fr: 'Panama', iso_code: 'PA', flag_emoji: '🇵🇦', difficulty: 4 },
+  { name_fr: 'République dominicaine', iso_code: 'DO', flag_emoji: '🇩🇴', difficulty: 4 },
+  { name_fr: 'Jamaïque', iso_code: 'JM', flag_emoji: '🇯🇲', difficulty: 4 },
+  { name_fr: 'Madagascar', iso_code: 'MG', flag_emoji: '🇲🇬', difficulty: 4 },
+  { name_fr: 'Maurice', iso_code: 'MU', flag_emoji: '🇲🇺', difficulty: 4 },
+  { name_fr: 'Botswana', iso_code: 'BW', flag_emoji: '🇧🇼', difficulty: 4 },
+  { name_fr: 'Namibie', iso_code: 'NA', flag_emoji: '🇳🇦', difficulty: 4 },
+  { name_fr: 'Zambie', iso_code: 'ZM', flag_emoji: '🇿🇲', difficulty: 4 },
+  { name_fr: 'Zimbabwe', iso_code: 'ZW', flag_emoji: '🇿🇼', difficulty: 4 },
+  { name_fr: 'Mozambique', iso_code: 'MZ', flag_emoji: '🇲🇿', difficulty: 4 },
+  { name_fr: 'Angola', iso_code: 'AO', flag_emoji: '🇦🇴', difficulty: 4 },
+  { name_fr: 'Cameroun', iso_code: 'CM', flag_emoji: '🇨🇲', difficulty: 4 },
+  { name_fr: "République centrafricaine", iso_code: 'CF', flag_emoji: '🇨🇫', difficulty: 4 },
+  // —— Tier 5 : reste du monde + territoires (+85 → 195+) ——
+  { name_fr: 'Biélorussie', iso_code: 'BY', flag_emoji: '🇧🇾', difficulty: 5 },
+  { name_fr: 'Moldavie', iso_code: 'MD', flag_emoji: '🇲🇩', difficulty: 5 },
+  { name_fr: 'Albanie', iso_code: 'AL', flag_emoji: '🇦🇱', difficulty: 5 },
+  { name_fr: 'Macédoine du Nord', iso_code: 'MK', flag_emoji: '🇲🇰', difficulty: 5 },
+  { name_fr: 'Bosnie-Herzégovine', iso_code: 'BA', flag_emoji: '🇧🇦', difficulty: 5 },
+  { name_fr: 'Monténégro', iso_code: 'ME', flag_emoji: '🇲🇪', difficulty: 5 },
+  { name_fr: 'Kosovo', iso_code: 'XK', flag_emoji: '🇽🇰', difficulty: 5 },
+  { name_fr: 'Slovénie', iso_code: 'SI', flag_emoji: '🇸🇮', difficulty: 5 },
+  { name_fr: 'Chypre', iso_code: 'CY', flag_emoji: '🇨🇾', difficulty: 5 },
+  { name_fr: 'Libye', iso_code: 'LY', flag_emoji: '🇱🇾', difficulty: 5 },
+  { name_fr: 'Soudan', iso_code: 'SD', flag_emoji: '🇸🇩', difficulty: 5 },
+  { name_fr: 'Soudan du Sud', iso_code: 'SS', flag_emoji: '🇸🇸', difficulty: 5 },
+  { name_fr: 'Érythrée', iso_code: 'ER', flag_emoji: '🇪🇷', difficulty: 5 },
+  { name_fr: 'Djibouti', iso_code: 'DJ', flag_emoji: '🇩🇯', difficulty: 5 },
+  { name_fr: 'Somalie', iso_code: 'SO', flag_emoji: '🇸🇴', difficulty: 5 },
+  { name_fr: 'Rwanda', iso_code: 'RW', flag_emoji: '🇷🇼', difficulty: 5 },
+  { name_fr: 'Burundi', iso_code: 'BI', flag_emoji: '🇧🇮', difficulty: 5 },
+  { name_fr: 'Mali', iso_code: 'ML', flag_emoji: '🇲🇱', difficulty: 5 },
+  { name_fr: 'Burkina Faso', iso_code: 'BF', flag_emoji: '🇧🇫', difficulty: 5 },
+  { name_fr: 'Niger', iso_code: 'NE', flag_emoji: '🇳🇪', difficulty: 5 },
+  { name_fr: 'Tchad', iso_code: 'TD', flag_emoji: '🇹🇩', difficulty: 5 },
+  { name_fr: 'Bénin', iso_code: 'BJ', flag_emoji: '🇧🇯', difficulty: 5 },
+  { name_fr: 'Togo', iso_code: 'TG', flag_emoji: '🇹🇬', difficulty: 5 },
+  { name_fr: 'Guinée', iso_code: 'GN', flag_emoji: '🇬🇳', difficulty: 5 },
+  { name_fr: 'Sierra Leone', iso_code: 'SL', flag_emoji: '🇸🇱', difficulty: 5 },
+  { name_fr: 'Liberia', iso_code: 'LR', flag_emoji: '🇱🇷', difficulty: 5 },
+  { name_fr: 'Gambie', iso_code: 'GM', flag_emoji: '🇬🇲', difficulty: 5 },
+  { name_fr: 'Guinée-Bissau', iso_code: 'GW', flag_emoji: '🇬🇼', difficulty: 5 },
+  { name_fr: 'Guinée équatoriale', iso_code: 'GQ', flag_emoji: '🇬🇶', difficulty: 5 },
+  { name_fr: 'Gabon', iso_code: 'GA', flag_emoji: '🇬🇦', difficulty: 5 },
+  { name_fr: 'République du Congo', iso_code: 'CG', flag_emoji: '🇨🇬', difficulty: 5 },
+  { name_fr: 'Lesotho', iso_code: 'LS', flag_emoji: '🇱🇸', difficulty: 5 },
+  { name_fr: 'Eswatini', iso_code: 'SZ', flag_emoji: '🇸🇿', difficulty: 5 },
+  { name_fr: 'Malawi', iso_code: 'MW', flag_emoji: '🇲🇼', difficulty: 5 },
+  { name_fr: 'Mauritanie', iso_code: 'MR', flag_emoji: '🇲🇷', difficulty: 5 },
+  { name_fr: 'Cap-Vert', iso_code: 'CV', flag_emoji: '🇨🇻', difficulty: 5 },
+  { name_fr: 'Comores', iso_code: 'KM', flag_emoji: '🇰🇲', difficulty: 5 },
+  { name_fr: 'Seychelles', iso_code: 'SC', flag_emoji: '🇸🇨', difficulty: 5 },
+  { name_fr: 'Bahreïn', iso_code: 'BH', flag_emoji: '🇧🇭', difficulty: 5 },
+  { name_fr: 'Qatar', iso_code: 'QA', flag_emoji: '🇶🇦', difficulty: 5 },
+  { name_fr: 'Koweït', iso_code: 'KW', flag_emoji: '🇰🇼', difficulty: 5 },
+  { name_fr: 'Émirats arabes unis', iso_code: 'AE', flag_emoji: '🇦🇪', difficulty: 5 },
+  { name_fr: 'Oman', iso_code: 'OM', flag_emoji: '🇴🇲', difficulty: 5 },
+  { name_fr: 'Yémen', iso_code: 'YE', flag_emoji: '🇾🇪', difficulty: 5 },
+  { name_fr: 'Syrie', iso_code: 'SY', flag_emoji: '🇸🇾', difficulty: 5 },
+  { name_fr: 'Palestine', iso_code: 'PS', flag_emoji: '🇵🇸', difficulty: 5 },
+  { name_fr: 'Turkménistan', iso_code: 'TM', flag_emoji: '🇹🇲', difficulty: 5 },
+  { name_fr: 'Tadjikistan', iso_code: 'TJ', flag_emoji: '🇹🇯', difficulty: 5 },
+  { name_fr: 'Kirghizistan', iso_code: 'KG', flag_emoji: '🇰🇬', difficulty: 5 },
+  { name_fr: 'Corée du Nord', iso_code: 'KP', flag_emoji: '🇰🇵', difficulty: 5 },
+  { name_fr: 'Brunei', iso_code: 'BN', flag_emoji: '🇧🇳', difficulty: 5 },
+  { name_fr: 'Timor oriental', iso_code: 'TL', flag_emoji: '🇹🇱', difficulty: 5 },
+  { name_fr: 'Papouasie-Nouvelle-Guinée', iso_code: 'PG', flag_emoji: '🇵🇬', difficulty: 5 },
+  { name_fr: 'Salomon', iso_code: 'SB', flag_emoji: '🇸🇧', difficulty: 5 },
+  { name_fr: 'Vanuatu', iso_code: 'VU', flag_emoji: '🇻🇺', difficulty: 5 },
+  { name_fr: 'Micronésie', iso_code: 'FM', flag_emoji: '🇫🇲', difficulty: 5 },
+  { name_fr: 'Marshall', iso_code: 'MH', flag_emoji: '🇲🇭', difficulty: 5 },
+  { name_fr: 'Belize', iso_code: 'BZ', flag_emoji: '🇧🇿', difficulty: 5 },
+  { name_fr: 'Salvador', iso_code: 'SV', flag_emoji: '🇸🇻', difficulty: 5 },
+  { name_fr: 'Nicaragua', iso_code: 'NI', flag_emoji: '🇳🇮', difficulty: 5 },
+  { name_fr: 'Haïti', iso_code: 'HT', flag_emoji: '🇭🇹', difficulty: 5 },
+  { name_fr: 'Trinité-et-Tobago', iso_code: 'TT', flag_emoji: '🇹🇹', difficulty: 5 },
+  { name_fr: 'Barbade', iso_code: 'BB', flag_emoji: '🇧🇧', difficulty: 5 },
+  { name_fr: 'Bahamas', iso_code: 'BS', flag_emoji: '🇧🇸', difficulty: 5 },
+  { name_fr: 'Saint-Kitts-et-Nevis', iso_code: 'KN', flag_emoji: '🇰🇳', difficulty: 5 },
+  { name_fr: 'Grenade', iso_code: 'GD', flag_emoji: '🇬🇩', difficulty: 5 },
+  { name_fr: 'Saint-Vincent-et-les-Grenadines', iso_code: 'VC', flag_emoji: '🇻🇨', difficulty: 5 },
+  { name_fr: 'Sainte-Lucie', iso_code: 'LC', flag_emoji: '🇱🇨', difficulty: 5 },
+  { name_fr: 'Dominique', iso_code: 'DM', flag_emoji: '🇩🇲', difficulty: 5 },
+  { name_fr: 'Antigua-et-Barbuda', iso_code: 'AG', flag_emoji: '🇦🇬', difficulty: 5 },
+  { name_fr: 'Suriname', iso_code: 'SR', flag_emoji: '🇸🇷', difficulty: 5 },
+  { name_fr: 'Guyana', iso_code: 'GY', flag_emoji: '🇬🇾', difficulty: 5 },
+  { name_fr: 'Équateur', iso_code: 'EC', flag_emoji: '🇪🇨', difficulty: 5 },
+  // Territoires & régions spéciales
+  { name_fr: 'Taïwan', iso_code: 'TW', flag_emoji: '🇹🇼', difficulty: 5 },
+  { name_fr: 'Hong Kong', iso_code: 'HK', flag_emoji: '🇭🇰', difficulty: 5 },
+  { name_fr: 'Macao', iso_code: 'MO', flag_emoji: '🇲🇴', difficulty: 5 },
+  { name_fr: 'Porto Rico', iso_code: 'PR', flag_emoji: '🇵🇷', difficulty: 5 },
+  { name_fr: 'Groenland', iso_code: 'GL', flag_emoji: '🇬🇱', difficulty: 5 },
+  { name_fr: 'Bermudes', iso_code: 'BM', flag_emoji: '🇧🇲', difficulty: 5 },
+  { name_fr: 'Guam', iso_code: 'GU', flag_emoji: '🇬🇺', difficulty: 5 },
+  { name_fr: 'Îles Vierges américaines', iso_code: 'VI', flag_emoji: '🇻🇮', difficulty: 5 },
+  { name_fr: 'Aruba', iso_code: 'AW', flag_emoji: '🇦🇼', difficulty: 5 },
+  { name_fr: 'Curaçao', iso_code: 'CW', flag_emoji: '🇨🇼', difficulty: 5 },
+  { name_fr: 'Polynésie française', iso_code: 'PF', flag_emoji: '🇵🇫', difficulty: 5 },
+  { name_fr: 'Nouvelle-Calédonie', iso_code: 'NC', flag_emoji: '🇳🇨', difficulty: 5 },
+  { name_fr: 'Guyane française', iso_code: 'GF', flag_emoji: '🇬🇫', difficulty: 5 },
+  { name_fr: 'Gibraltar', iso_code: 'GI', flag_emoji: '🇬🇮', difficulty: 5 },
+  { name_fr: 'Îles Féroé', iso_code: 'FO', flag_emoji: '🇫🇴', difficulty: 5 },
+  { name_fr: 'Île de Man', iso_code: 'IM', flag_emoji: '🇮🇲', difficulty: 5 },
+  { name_fr: 'Jersey', iso_code: 'JE', flag_emoji: '🇯🇪', difficulty: 5 },
+  { name_fr: 'Guernesey', iso_code: 'GG', flag_emoji: '🇬🇬', difficulty: 5 },
+  { name_fr: 'Anguilla', iso_code: 'AI', flag_emoji: '🇦🇮', difficulty: 5 },
+  { name_fr: 'Montserrat', iso_code: 'MS', flag_emoji: '🇲🇸', difficulty: 5 },
+  { name_fr: 'Îles Caïmans', iso_code: 'KY', flag_emoji: '🇰🇾', difficulty: 5 },
+  { name_fr: 'Turks-et-Caïcos', iso_code: 'TC', flag_emoji: '🇹🇨', difficulty: 5 },
+  { name_fr: 'Îles Malouines', iso_code: 'FK', flag_emoji: '🇫🇰', difficulty: 5 },
+  { name_fr: 'Sahara occidental', iso_code: 'EH', flag_emoji: '🇪🇭', difficulty: 5 },
+  { name_fr: 'Antarctique', iso_code: 'AQ', flag_emoji: '🇦🇶', difficulty: 5 },
+];
+
+export function getPoolForDifficulty(difficulty: Difficulty): Country[] {
+  const maxTier = DIFFICULTY_TIER[difficulty];
+  return COUNTRIES.filter((c) => c.difficulty <= maxTier);
+}
+
+export function getCountryCount(difficulty: Difficulty): number {
+  return getPoolForDifficulty(difficulty).length;
+}
+
+function uid(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function shuffle<T>(arr: T[]): T[] {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
+export function generateFlagQuestions(
+  difficulty: Difficulty,
+  count: number = 10,
+): import('../types').FlagQuestion[] {
+  const pool = getPoolForDifficulty(difficulty);
+  const selected = shuffle(pool).slice(0, Math.min(count, pool.length));
+  const questions: import('../types').FlagQuestion[] = [];
+
+  for (const country of selected) {
+    const wrongCountries = pickSimilarWrongCountries(country, pool, difficulty);
+    const wrong = wrongCountries.map((c) => c.name_fr);
+    const options = shuffle([country.name_fr, ...wrong]);
+    questions.push({
+      id: uid(),
+      country,
+      options,
+      correctAnswer: country.name_fr,
+    });
+  }
+
+  return shuffle(questions);
+}
+
+/** Vérifie que chaque pays a un code ISO 3166-1 alpha-2 valide (2 lettres). */
+COUNTRIES.forEach((c) => {
+  if (!isValidIsoCode(c.iso_code)) {
+    throw new Error(`Code ISO invalide pour ${c.name_fr}: "${c.iso_code}"`);
+  }
+});

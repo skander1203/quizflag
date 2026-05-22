@@ -1,0 +1,187 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-purple-deep: #1a0533;
+  --font-sans: "Nunito", system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+  body {
+    min-height: 100dvh;
+    margin: 0;
+    color: white;
+    overflow-x: hidden;
+    background-color: #0a0015;
+  }
+  #root {
+    min-height: 100dvh;
+    width: 100%;
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  .phone-viewport {
+    @apply min-h-dvh w-full flex items-stretch sm:items-center justify-center;
+    @apply p-0 sm:p-4 md:p-6;
+    background-color: #0a0015;
+  }
+
+  .phone-frame {
+    position: relative;
+    overflow: hidden;
+    /* Mobile: fill the full screen edge-to-edge */
+    @apply w-full max-w-full min-h-dvh flex flex-col mx-auto;
+    /* Tablet+: centered card, never wider than the available space */
+    @apply sm:min-h-0 sm:rounded-[2rem] sm:border-2 sm:border-white/15;
+    @apply sm:shadow-[0_25px_80px_rgba(0,0,0,0.6)];
+    /* Fluid width: up to 500 px but always ≤ available viewport */
+    @apply sm:w-[min(500px,calc(100vw-2rem))];
+    /* Fluid height: up to 900 px but never taller than the visible viewport */
+    @apply sm:h-[min(900px,100svh)];
+    /* Desktop: larger centered phone mockup */
+    @apply lg:w-[420px] lg:max-w-[420px] lg:rounded-3xl lg:border-2 lg:border-white/20;
+    @apply lg:h-[90vh] lg:max-h-[90vh];
+    @apply lg:shadow-[0_25px_80px_rgba(0,0,0,0.6)];
+    background-color: #1a0533;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 20% 15%, rgba(255, 107, 157, 0.22), transparent),
+      radial-gradient(ellipse 60% 40% at 85% 8%, rgba(0, 212, 255, 0.18), transparent),
+      radial-gradient(ellipse 50% 50% at 50% 95%, rgba(255, 230, 109, 0.12), transparent),
+      linear-gradient(165deg, #1a0533 0%, #2d0a5c 45%, #1a0533 100%);
+  }
+  .phone-screen {
+    @apply relative flex flex-col flex-1 min-h-0 w-full max-w-full overflow-hidden;
+  }
+
+  .glass-card {
+    @apply rounded-2xl bg-white/10 backdrop-blur-md border border-white/20;
+  }
+  .flag-card-bg {
+    @apply bg-white/95 backdrop-blur-sm;
+  }
+  .flag-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.35) 50%,
+      rgba(255, 255, 255, 0.08) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.2s ease-in-out infinite;
+  }
+  .flag-shimmer-purple {
+    background-color: #1a0533;
+    background-image: linear-gradient(
+      90deg,
+      rgba(45, 10, 92, 0.6) 0%,
+      rgba(109, 40, 217, 0.45) 50%,
+      rgba(45, 10, 92, 0.6) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.2s ease-in-out infinite;
+  }
+  .flag-parade-slot {
+    background-color: #1a0533;
+  }
+  /* Plain purple blur — no gradients (avoids fade above the card) */
+  .credits-backdrop {
+    background-color: rgba(26, 5, 51, 0.78);
+    background-image: none;
+    overflow: hidden;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  .scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+  .credits-name-gradient {
+    background: linear-gradient(
+      135deg,
+      #f9a8d4 0%,
+      #fde047 35%,
+      #67e8f9 70%,
+      #c084fc 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 12px rgba(236, 72, 153, 0.35));
+  }
+  .btn-gradient-pink {
+    @apply inline-flex items-center justify-center font-extrabold text-white rounded-full
+           min-h-[48px] px-8 py-3 w-full max-w-full text-base sm:text-lg
+           bg-gradient-to-r from-pink-500 to-purple-600 shadow-lg shadow-pink-500/30
+           hover:shadow-pink-500/50 focus:outline-none focus:ring-2 focus:ring-pink-400
+           transition-shadow disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-gradient-cyan {
+    @apply inline-flex items-center justify-center font-bold text-white rounded-full
+           min-h-[48px] px-6 py-3 w-full max-w-full text-sm sm:text-base
+           bg-gradient-to-r from-cyan-400 to-blue-600 shadow-md shadow-cyan-500/25
+           hover:shadow-cyan-500/40 focus:outline-none focus:ring-2 focus:ring-cyan-400
+           transition-shadow;
+  }
+  .tap-target {
+    @apply min-h-[48px] min-w-[48px];
+  }
+  .answer-btn {
+    @apply w-full min-h-[48px] py-3.5 px-4 rounded-2xl font-bold text-base sm:text-lg text-left
+           border-2 transition-all;
+  }
+
+  .difficulty-card {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    transition: box-shadow 0.25s ease, transform 0.2s ease;
+  }
+  .difficulty-card:hover,
+  .difficulty-card:focus-visible {
+    box-shadow:
+      0 0 28px var(--glow-color),
+      0 12px 40px rgba(0, 0, 0, 0.35);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Infinite marquee ──────────────────────────────────────────────────────
+   The track contains 3 identical copies.  Translating by -33.333% (= one
+   copy's exact width when items use per-item right-margin) produces a
+   pixel-perfect seamless loop: at the end the second copy is where the first
+   started, and the browser's "infinite" restart snaps back invisibly.
+   ──────────────────────────────────────────────────────────────────────── */
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-33.3333%); }
+}
+
+.animate-marquee {
+  animation: marquee 48s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-fast {
+  animation: marquee 22s linear infinite;
+  will-change: transform;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
