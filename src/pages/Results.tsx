@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
 import { Confetti } from '../components/Confetti';
+import { saveBestScore } from '../lib/leaderboardApi';
 import {
   MAX_DISPLAY_SCORE,
   starRating,
@@ -13,10 +14,25 @@ export function Results() {
   const navigate = useNavigate();
   const { state, dispatch } = useQuiz();
   const session = state.session;
+  const savedToSupabaseRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!session?.finished) navigate('/');
   }, [session, navigate]);
+
+  useEffect(() => {
+    if (!session?.finished) return;
+    const playerName = state.player.name.trim();
+    if (!playerName) return;
+
+    const key = `${playerName}-${session.score}-${session.difficulty}`;
+    if (savedToSupabaseRef.current === key) return;
+    savedToSupabaseRef.current = key;
+
+    saveBestScore(playerName, session.score, session.difficulty).catch(() => {
+      /* local leaderboard still updated via QuizContext */
+    });
+  }, [session, state.player.name]);
 
   if (!session) return null;
 
