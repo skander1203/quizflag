@@ -18,10 +18,10 @@ export function FlagDisplay({
     return (
       <motion.div
         key={isoCode}
-        initial={{ scale: 0.85, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 320, damping: 22 }}
-        className="flex items-center justify-center min-h-[32dvh] sm:min-h-[36dvh] lg:min-h-[38dvh] max-h-[42dvh] py-3 w-full"
+        initial={{ opacity: 0, y: 0 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex items-center justify-center overflow-hidden w-full h-[32dvh] sm:h-[36dvh] lg:h-[38dvh]"
         role="img"
         aria-label={
           countryName ? `Drapeau de ${countryName}` : 'Drapeau à identifier'
@@ -33,9 +33,9 @@ export function FlagDisplay({
           alt={countryName ? `Drapeau ${countryName}` : 'Drapeau'}
           cdnWidth={320}
           loading="eager"
-          className="w-full flex justify-center"
-          imgClassName="w-[240px] sm:w-[280px] lg:w-[300px] max-w-full h-auto rounded-2xl shadow-2xl object-contain"
-          skeletonClassName="w-[240px] sm:w-[280px] lg:w-[300px] max-w-full min-h-[140px] sm:min-h-[160px] lg:min-h-[170px] mx-auto rounded-2xl"
+          className="w-[240px] sm:w-[280px] lg:w-[300px] h-[140px] sm:h-[160px] lg:h-[170px] flex items-center justify-center"
+          imgClassName="w-full h-full rounded-2xl shadow-2xl object-contain object-center"
+          skeletonClassName="w-full h-full rounded-2xl"
         />
       </motion.div>
     );

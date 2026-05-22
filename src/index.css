@@ -17,7 +17,8 @@
     margin: 0;
     color: white;
     overflow-x: hidden;
-    background-color: #0a0015;
+    padding-top: env(safe-area-inset-top);
+    background-color: #1a0533;
   }
   #root {
     min-height: 100dvh;
