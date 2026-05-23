@@ -21,7 +21,6 @@ import {
 
 const PODIUM_HEIGHT = { 1: 160, 2: 120, 3: 90 } as const;
 const PODIUM_COLOR = { 1: '#ffd700', 2: '#c0c0c0', 3: '#cd7f32' } as const;
-const PODIUM_MEDAL = { 1: '👑', 2: '🥈', 3: '🥉' } as const;
 
 /** 2nd (left) · 1st (center) · 3rd (right) — identical on every client */
 const PODIUM_SLOTS = [
@@ -226,7 +225,7 @@ export function MultiplayerResults() {
                 >
                   {isFirst && (
                     <span className="text-2xl sm:text-3xl mb-1" aria-hidden="true">
-                      {PODIUM_MEDAL[1]}
+                      👑
                     </span>
                   )}
                   <PlayerAvatar
@@ -244,7 +243,7 @@ export function MultiplayerResults() {
                 </motion.div>
 
                 <motion.div
-                  className="w-full rounded-t-xl sm:rounded-t-2xl border-2 border-white/25 flex items-start justify-center pt-2 sm:pt-3 shadow-lg"
+                  className="w-full rounded-t-xl sm:rounded-t-2xl border-2 border-white/25 shadow-lg"
                   style={{ backgroundColor: blockColor }}
                   initial={{ height: 0 }}
                   animate={{ height }}
@@ -254,13 +253,7 @@ export function MultiplayerResults() {
                     stiffness: 220,
                     damping: 20,
                   }}
-                >
-                  {!isFirst && (
-                    <span className="text-xl sm:text-2xl" aria-hidden="true">
-                      {PODIUM_MEDAL[place]}
-                    </span>
-                  )}
-                </motion.div>
+                />
               </div>
             );
           })}
@@ -319,7 +312,7 @@ export function MultiplayerResults() {
             disabled={replaying}
             onClick={() => void handleReplay()}
           >
-            {replaying ? 'Relance…' : '🔄 Rejouer une partie'}
+            {replaying ? 'Relance…' : 'Rejouer une partie'}
           </motion.button>
         )}
 
@@ -332,7 +325,7 @@ export function MultiplayerResults() {
           transition={{ delay: isHost ? 1 : 0.9 }}
           onClick={handleMenu}
         >
-          🏠 Retour au menu
+          Retour au menu
         </motion.button>
       </div>
     </div>
