@@ -5,7 +5,7 @@ import { useQuiz } from '../context/QuizContext';
 import { useAuth } from '../context/AuthContext';
 import { useSounds } from '../hooks/useSounds';
 import { Confetti } from '../components/Confetti';
-import { saveBestScore } from '../lib/leaderboardApi';
+import { supabase } from '../lib/supabase';
 import { updateUserStatsAfterGame } from '../lib/statsApi';
 import {
   MAX_DISPLAY_SCORE,
@@ -15,7 +15,7 @@ import {
 
 export function Results() {
   const navigate = useNavigate();
-  const { isGuest, user, username } = useAuth();
+  const { isGuest, user } = useAuth();
   const { state, dispatch, startGame } = useQuiz();
   const { playVictory, withClick } = useSounds();
   const session = state.session;
@@ -31,7 +31,7 @@ export function Results() {
   }, []);
 
   useEffect(() => {
-    if (!session?.finished || isGuest || !user) return;
+    if (!session?.finished || isGuest || !user || session.score <= 0) return;
 
     const key = `${user.id}-${session.score}-${session.correctCount}-${session.wrongCount}-${session.difficulty}`;
     if (savedToSupabaseRef.current === key) return;
@@ -46,13 +46,54 @@ export function Results() {
       console.log('[stats] save failed', err);
     });
 
-    if (username) {
-      console.log('Saving score:', username, session.score, session.difficulty);
-      saveBestScore(username, session.score, session.difficulty).catch((err) => {
-        console.log('[leaderboard] save failed', err);
+    void (async () => {
+      const finalScore = session.score;
+      const gameDifficulty = session.difficulty;
+
+      console.log('[leaderboard] game finished, fetching profile', { userId: user.id, finalScore, gameDifficulty });
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.log('[leaderboard] profile fetch error', profileError);
+        return;
+      }
+
+      const profileUsername = profile?.username?.trim();
+      console.log('[leaderboard] profile username', profileUsername);
+
+      if (!profileUsername) {
+        console.log('[leaderboard] no username, skipping save');
+        return;
+      }
+
+      console.log('[leaderboard] upserting score', {
+        player_name: profileUsername,
+        score: finalScore,
+        difficulty: gameDifficulty,
       });
-    }
-  }, [session, isGuest, user, username]);
+
+      const { error: upsertError } = await supabase.from('leaderboard').upsert(
+        { player_name: profileUsername, score: finalScore, difficulty: gameDifficulty },
+        { onConflict: 'player_name,difficulty' },
+      );
+
+      if (upsertError) {
+        console.log('[leaderboard] upsert error', upsertError);
+        return;
+      }
+
+      console.log('[leaderboard] save success', {
+        player_name: profileUsername,
+        score: finalScore,
+        difficulty: gameDifficulty,
+      });
+    })();
+  }, [session, isGuest, user]);
 
   useEffect(() => {
     if (!session?.finished || session.score <= 700 || victoryPlayedRef.current) return;

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { truncateUsername } from '../utils/username';
+import { HEADER_USERNAME_MAX, truncateUsername } from '../utils/username';
 import { avatarGradientClass } from '../utils/avatarColor';
 
 export function UserMenu() {
@@ -101,8 +101,8 @@ export function UserMenu() {
           )}
         </span>
         <span
-          className="text-white text-sm font-bold max-w-[100px]"
-          title={username.length > 10 ? username : undefined}
+          className="text-white text-sm font-bold max-w-[88px] truncate"
+          title={username.length > HEADER_USERNAME_MAX ? username : undefined}
         >
           {displayName}
         </span>
