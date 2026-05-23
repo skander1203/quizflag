@@ -8,12 +8,14 @@ import {
 } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import {
+  createProfile,
+  fetchUsername,
+  isUsernameTaken,
+  emailExists,
+} from '../lib/profilesApi';
 
-export function getUsername(user: User | null | undefined): string {
-  if (!user) return '';
-  const username = user.user_metadata?.username;
-  return typeof username === 'string' ? username.trim() : '';
-}
+const USERNAME_TAKEN_ERROR = 'Ce pseudo est déjà pris, choisissez-en un autre';
 
 function translateAuthError(message: string): string {
   const lower = message.toLowerCase();
@@ -47,17 +49,29 @@ type AuthContextValue = {
   ) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: string | null; success: boolean }>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
+  const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(true);
+
+  const loadUsername = useCallback(async (userId: string) => {
+    const name = await fetchUsername(userId);
+    setUsername(name);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
+      if (currentSession?.user) {
+        void loadUsername(currentSession.user.id);
+      } else {
+        setUsername('');
+      }
       setLoading(false);
     });
 
@@ -65,39 +79,98 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
+      if (nextSession?.user) {
+        void loadUsername(nextSession.user.id);
+      } else {
+        setUsername('');
+      }
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [loadUsername]);
 
   const signUp = useCallback(
-    async (email: string, password: string, username: string) => {
-      const { error } = await supabase.auth.signUp({
+    async (email: string, password: string, usernameInput: string) => {
+      const trimmedUsername = usernameInput.trim();
+
+      try {
+        if (await isUsernameTaken(trimmedUsername)) {
+          return { error: USERNAME_TAKEN_ERROR };
+        }
+      } catch {
+        return { error: 'Impossible de vérifier le pseudo. Réessayez.' };
+      }
+
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: { username: username.trim() },
+          data: { username: trimmedUsername },
         },
       });
+
       if (error) {
         return { error: translateAuthError(error.message) };
       }
+
+      const userId = data.user?.id;
+      if (!userId) {
+        return { error: 'Inscription impossible. Réessayez.' };
+      }
+
+      const { error: profileError } = await createProfile(userId, trimmedUsername);
+      if (profileError) {
+        await supabase.auth.signOut();
+        return { error: profileError };
+      }
+
+      setUsername(trimmedUsername);
       return { error: null };
     },
     [],
   );
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       return { error: translateAuthError(error.message) };
     }
+    if (data.user) {
+      await loadUsername(data.user.id);
+    }
     return { error: null };
-  }, []);
+  }, [loadUsername]);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
+    setUsername('');
+  }, []);
+
+  const resetPassword = useCallback(async (email: string) => {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      return { error: 'Veuillez entrer une adresse email.', success: false };
+    }
+
+    try {
+      const exists = await emailExists(trimmed);
+      if (!exists) {
+        return { error: 'Aucun compte trouvé avec cet email.', success: false };
+      }
+    } catch {
+      return { error: 'Impossible de vérifier l\'email. Réessayez.', success: false };
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
+      redirectTo: window.location.origin,
+    });
+
+    if (error) {
+      return { error: translateAuthError(error.message), success: false };
+    }
+
+    return { error: null, success: true };
   }, []);
 
   const user = session?.user ?? null;
@@ -107,11 +180,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         session,
-        username: getUsername(user),
+        username,
         loading,
         signUp,
         signIn,
         signOut,
+        resetPassword,
       }}
     >
       {children}

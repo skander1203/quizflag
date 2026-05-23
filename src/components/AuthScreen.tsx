@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 
 type Tab = 'login' | 'register';
+type LoginView = 'form' | 'forgot';
 
 function Spinner() {
   return (
@@ -34,27 +35,47 @@ const inputClass =
   'w-full px-4 py-3 rounded-2xl bg-white/10 border border-cyan-400/40 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-pink-400';
 
 export function AuthScreen() {
-  const { signUp, signIn } = useAuth();
+  const { signUp, signIn, resetPassword } = useAuth();
   const [tab, setTab] = useState<Tab>('login');
+  const [loginView, setLoginView] = useState<LoginView>('form');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [forgotEmail, setForgotEmail] = useState('');
 
   const [username, setUsername] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  const clearMessages = () => {
+    setError(null);
+    setSuccess(null);
+  };
+
   const switchTab = (next: Tab) => {
     setTab(next);
-    setError(null);
+    setLoginView('form');
+    clearMessages();
+  };
+
+  const openForgotPassword = () => {
+    setLoginView('forgot');
+    setForgotEmail(loginEmail);
+    clearMessages();
+  };
+
+  const backToLogin = () => {
+    setLoginView('form');
+    clearMessages();
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    clearMessages();
 
     if (!loginEmail.trim() || !loginPassword) {
       setError('Veuillez remplir tous les champs.');
@@ -70,9 +91,30 @@ export function AuthScreen() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    clearMessages();
+
+    if (!forgotEmail.trim()) {
+      setError('Veuillez entrer une adresse email.');
+      return;
+    }
+
+    setLoading(true);
+    const result = await resetPassword(forgotEmail.trim());
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    setSuccess('Un lien de réinitialisation a été envoyé à votre email');
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    clearMessages();
 
     if (!username.trim()) {
       setError('Veuillez entrer un nom d\'utilisateur.');
@@ -159,56 +201,117 @@ export function AuthScreen() {
 
         <AnimatePresence mode="wait">
           {tab === 'login' ? (
-            <motion.form
-              key="login"
-              initial={{ opacity: 0, x: -16 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 16 }}
-              transition={{ duration: 0.2 }}
-              onSubmit={(e) => void handleLogin(e)}
-              className="space-y-4"
-            >
-              <div>
-                <label htmlFor="login-email" className="sr-only">
-                  Email
-                </label>
-                <input
-                  id="login-email"
-                  type="email"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="Email"
-                  autoComplete="email"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label htmlFor="login-password" className="sr-only">
-                  Mot de passe
-                </label>
-                <input
-                  id="login-password"
-                  type="password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="Mot de passe"
-                  autoComplete="current-password"
-                  className={inputClass}
-                />
-              </div>
-              {error && (
-                <p className="text-red-400 text-sm font-semibold text-center" role="alert">
-                  {error}
-                </p>
-              )}
-              <button
-                type="submit"
-                className="btn-gradient-pink w-full flex items-center justify-center gap-2"
-                disabled={loading}
+            loginView === 'forgot' ? (
+              <motion.form
+                key="forgot"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.2 }}
+                onSubmit={(e) => void handleForgotPassword(e)}
+                className="space-y-4"
               >
-                {loading ? <Spinner /> : 'Se connecter'}
-              </button>
-            </motion.form>
+                <p className="text-white/80 text-sm font-semibold text-center">
+                  Réinitialiser le mot de passe
+                </p>
+                <div>
+                  <label htmlFor="forgot-email" className="sr-only">
+                    Email
+                  </label>
+                  <input
+                    id="forgot-email"
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    placeholder="Email"
+                    autoComplete="email"
+                    className={inputClass}
+                  />
+                </div>
+                {error && (
+                  <p className="text-red-400 text-sm font-semibold text-center" role="alert">
+                    {error}
+                  </p>
+                )}
+                {success && (
+                  <p className="text-green-400 text-sm font-semibold text-center" role="status">
+                    {success}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  className="btn-gradient-pink w-full flex items-center justify-center gap-2"
+                  disabled={loading}
+                >
+                  {loading ? <Spinner /> : 'Envoyer le lien'}
+                </button>
+                <button
+                  type="button"
+                  onClick={backToLogin}
+                  className="w-full text-white/50 text-sm font-semibold hover:text-white/70 transition-colors"
+                >
+                  ← Retour à la connexion
+                </button>
+              </motion.form>
+            ) : (
+              <motion.form
+                key="login"
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 16 }}
+                transition={{ duration: 0.2 }}
+                onSubmit={(e) => void handleLogin(e)}
+                className="space-y-4"
+              >
+                <div>
+                  <label htmlFor="login-email" className="sr-only">
+                    Email
+                  </label>
+                  <input
+                    id="login-email"
+                    type="email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="Email"
+                    autoComplete="email"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="login-password" className="sr-only">
+                    Mot de passe
+                  </label>
+                  <input
+                    id="login-password"
+                    type="password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="Mot de passe"
+                    autoComplete="current-password"
+                    className={inputClass}
+                  />
+                  <button
+                    type="button"
+                    onClick={openForgotPassword}
+                    className="mt-2 text-white/50 text-xs font-semibold hover:text-white/70 transition-colors"
+                  >
+                    Mot de passe oublié ?
+                  </button>
+                </div>
+                {error && (
+                  <p className="text-red-400 text-sm font-semibold text-center" role="alert">
+                    {error}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  className="btn-gradient-pink w-full flex items-center justify-center gap-2"
+                  disabled={loading}
+                >
+                  {loading ? <Spinner /> : 'Se connecter'}
+                </button>
+              </motion.form>
+            )
           ) : (
             <motion.form
               key="register"
