@@ -5,7 +5,6 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { FlagDisplay } from '../components/FlagDisplay';
 import { Timer } from '../components/Timer';
 import { Confetti } from '../components/Confetti';
-import { useSyncedTimer } from '../hooks/useSyncedTimer';
 import {
   advanceQuestion,
   countAnswersForQuestion,
@@ -44,11 +43,6 @@ function glowForPoints(points: number): string {
   return '0 0 8px rgba(74, 222, 128, 0.75), 0 0 18px rgba(74, 222, 128, 0.4)';
 }
 
-function elapsedMsFromStart(startTimeIso: string | null): number {
-  if (!startTimeIso) return 0;
-  return Math.max(0, Date.now() - new Date(startTimeIso).getTime());
-}
-
 export function MultiplayerQuiz() {
   const { code: codeParam } = useParams<{ code: string }>();
   const navigate = useNavigate();
@@ -59,7 +53,9 @@ export function MultiplayerQuiz() {
 
   const [room, setRoom] = useState<GameRoom | null>(null);
   const [players, setPlayers] = useState<GamePlayer[]>([]);
-  const [hasAnswered, setHasAnswered] = useState(false);
+  const [remaining, setRemaining] = useState(TIMER_SECONDS);
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [isAnswering, setIsAnswering] = useState(false);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [floatingBonus, setFloatingBonus] = useState<FloatingBonus | null>(null);
@@ -67,12 +63,17 @@ export function MultiplayerQuiz() {
 
   const roomSubRef = useRef<RealtimeChannel | null>(null);
   const playersSubRef = useRef<RealtimeChannel | null>(null);
-  const advancingRef = useRef(false);
+  const timerIntervalRef = useRef<number | null>(null);
+  const remainingRef = useRef(TIMER_SECONDS);
+  const questionStartedAtRef = useRef(Date.now());
   const answeredIndexRef = useRef<number | null>(null);
+  const isAnsweringRef = useRef(false);
+  const advancingRef = useRef(false);
   const hostAdvanceIndexRef = useRef<number | null>(null);
   const playersRef = useRef<GamePlayer[]>([]);
   const currentIndexRef = useRef(0);
   const roomRef = useRef<GameRoom | null>(null);
+  const totalRef = useRef(0);
 
   const questions = room?.questions ?? [];
   const currentIndex = room?.current_question ?? 0;
@@ -80,17 +81,12 @@ export function MultiplayerQuiz() {
   const total = room?.question_count ?? questions.length;
   const myPlayer = players.find((p) => p.player_name === playerName);
   const answeredCount = players.filter((p) => p.answered).length;
-
-  const timerActive = room?.status === 'playing' && !!room.start_time && !!question;
-  const { remaining, progress, expired: timerExpired } = useSyncedTimer(
-    room?.start_time ?? null,
-    TIMER_SECONDS,
-    timerActive,
-  );
+  const progress = (remaining / TIMER_SECONDS) * 100;
 
   playersRef.current = players;
   currentIndexRef.current = currentIndex;
   roomRef.current = room;
+  totalRef.current = total;
 
   const handleRoomChange = useCallback(
     (updated: GameRoom) => {
@@ -165,12 +161,45 @@ export function MultiplayerQuiz() {
   }, [code, navigate, handleRoomChange]);
 
   useEffect(() => {
-    setHasAnswered(false);
+    setRemaining(TIMER_SECONDS);
+    remainingRef.current = TIMER_SECONDS;
+    setSelectedAnswer(null);
+    setIsAnswering(false);
+    isAnsweringRef.current = false;
     setFeedback(null);
     answeredIndexRef.current = null;
     advancingRef.current = false;
     hostAdvanceIndexRef.current = null;
-  }, [currentIndex, room?.start_time]);
+    questionStartedAtRef.current = Date.now();
+
+    if (timerIntervalRef.current !== null) {
+      window.clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+
+    if (!room || room.status !== 'playing' || !question) {
+      return;
+    }
+
+    timerIntervalRef.current = window.setInterval(() => {
+      setRemaining((prev) => {
+        if (prev <= 0) {
+          remainingRef.current = 0;
+          return 0;
+        }
+        const next = prev - 1;
+        remainingRef.current = next;
+        return next;
+      });
+    }, 1000);
+
+    return () => {
+      if (timerIntervalRef.current !== null) {
+        window.clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    };
+  }, [currentIndex, room?.start_time, room?.status, question?.id]);
 
   useEffect(() => {
     if (feedback === 'correct') {
@@ -180,15 +209,17 @@ export function MultiplayerQuiz() {
     }
   }, [feedback]);
 
-  const doSubmit = useCallback(
+  const handleAnswer = useCallback(
     async (answer: string) => {
       if (!question || !room || room.status !== 'playing') return;
-      if (answeredIndexRef.current === currentIndex) return;
+      if (isAnsweringRef.current || answeredIndexRef.current === currentIndexRef.current) return;
 
-      answeredIndexRef.current = currentIndex;
-      setHasAnswered(true);
+      isAnsweringRef.current = true;
+      setIsAnswering(true);
+      setSelectedAnswer(answer);
+      answeredIndexRef.current = currentIndexRef.current;
 
-      const elapsedMs = elapsedMsFromStart(room.start_time);
+      const elapsedMs = Math.max(0, Date.now() - questionStartedAtRef.current);
       const isCorrect = answer === question.correctAnswer;
       const points = pointsForAnswer(elapsedMs, isCorrect);
 
@@ -204,80 +235,83 @@ export function MultiplayerQuiz() {
       }
 
       try {
-        await submitAnswer(code, playerName, currentIndex, isCorrect, elapsedMs, points);
+        await submitAnswer(
+          code,
+          playerName,
+          currentIndexRef.current,
+          isCorrect,
+          elapsedMs,
+          points,
+        );
       } catch {
         answeredIndexRef.current = null;
-        setHasAnswered(false);
+        setSelectedAnswer(null);
         setFeedback(null);
+      } finally {
+        isAnsweringRef.current = false;
+        setIsAnswering(false);
       }
     },
-    [question, room, code, playerName, currentIndex],
+    [question, room, code, playerName],
   );
 
-  const handleAnswer = (answer: string) => {
-    if (!question || !room || hasAnswered || answeredIndexRef.current === currentIndex) {
+  const tryAdvance = useCallback(async () => {
+    if (!isHost) return;
+
+    const activeRoom = roomRef.current;
+    if (!activeRoom || activeRoom.status !== 'playing') return;
+
+    const questionIndex = activeRoom.current_question;
+    if (advancingRef.current) return;
+    if (hostAdvanceIndexRef.current === questionIndex) return;
+
+    const playerCount = playersRef.current.length;
+    if (playerCount === 0) return;
+
+    const timerDone = remainingRef.current === 0;
+    let answerCount = 0;
+
+    try {
+      answerCount = await countAnswersForQuestion(code, questionIndex);
+    } catch {
       return;
     }
-    void doSubmit(answer);
-  };
+
+    const allAnswered = answerCount >= playerCount;
+    if (!timerDone && !allAnswered) return;
+
+    advancingRef.current = true;
+    hostAdvanceIndexRef.current = questionIndex;
+
+    if (allAnswered && !timerDone) {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+    } else if (timerDone) {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    }
+
+    try {
+      await advanceQuestion(code, questionIndex, totalRef.current);
+    } catch {
+      advancingRef.current = false;
+      hostAdvanceIndexRef.current = null;
+    }
+  }, [isHost, code]);
 
   useEffect(() => {
-    if (!timerExpired || !question || !room || room.status !== 'playing') return;
-    if (answeredIndexRef.current === currentIndex) return;
-    void doSubmit('');
-  }, [timerExpired, question, room, currentIndex, doSubmit]);
+    if (!isHost || remaining !== 0 || !room || room.status !== 'playing') return;
+    void tryAdvance();
+  }, [isHost, remaining, room?.status, tryAdvance]);
 
   useEffect(() => {
     if (!isHost || !room || room.status !== 'playing') return;
 
-    const tryAdvance = async () => {
-      const activeRoom = roomRef.current;
-      if (!activeRoom || activeRoom.status !== 'playing') return;
-
-      const questionIndex = activeRoom.current_question;
-      if (advancingRef.current) return;
-      if (hostAdvanceIndexRef.current === questionIndex) return;
-
-      const playerCount = playersRef.current.length;
-      if (playerCount === 0) return;
-
-      const timerDone = timerExpired;
-      let answerCount = 0;
-
-      try {
-        answerCount = await countAnswersForQuestion(code, questionIndex);
-      } catch {
-        return;
-      }
-
-      const allAnswered = answerCount >= playerCount;
-      if (!timerDone && !allAnswered) return;
-
-      advancingRef.current = true;
-      hostAdvanceIndexRef.current = questionIndex;
-
-      if (allAnswered && !timerDone) {
-        await new Promise((resolve) => setTimeout(resolve, 1200));
-      } else if (timerDone) {
-        await new Promise((resolve) => setTimeout(resolve, 600));
-      }
-
-      try {
-        await advanceQuestion(code, questionIndex, total);
-      } catch {
-        advancingRef.current = false;
-        hostAdvanceIndexRef.current = null;
-      }
-    };
-
     const id = window.setInterval(() => {
+      if (remainingRef.current === 0) return;
       void tryAdvance();
-    }, 500);
-
-    void tryAdvance();
+    }, 1000);
 
     return () => window.clearInterval(id);
-  }, [isHost, room, code, total, timerExpired]);
+  }, [isHost, room?.status, currentIndex, tryAdvance]);
 
   if (!room || !question) {
     return (
@@ -287,6 +321,7 @@ export function MultiplayerQuiz() {
     );
   }
 
+  const hasAnswered = selectedAnswer !== null;
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
   const feedbackLabel =
     feedback === 'correct'
@@ -346,7 +381,7 @@ export function MultiplayerQuiz() {
           </button>
         </div>
         <div className="mt-2">
-          <Timer progress={progress} remaining={Math.ceil(remaining)} />
+          <Timer progress={progress} remaining={remaining} />
         </div>
       </header>
 
@@ -427,12 +462,16 @@ export function MultiplayerQuiz() {
             <motion.li key={opt} role="option" whileTap={!hasAnswered ? { scale: 0.98 } : {}}>
               <button
                 type="button"
-                disabled={hasAnswered}
-                onClick={() => handleAnswer(opt)}
+                disabled={hasAnswered || isAnswering}
+                onClick={() => void handleAnswer(opt)}
                 className={`answer-btn ${
                   feedback && opt === question.correctAnswer
                     ? 'bg-green-500/35 border-green-400 text-white'
-                    : 'glass-card border-white/25 text-white hover:border-cyan-400/50 hover:bg-white/15'
+                    : selectedAnswer === opt
+                      ? feedback === 'correct'
+                        ? 'bg-green-500/35 border-green-400 text-white'
+                        : 'bg-red-500/25 border-red-400/60 text-white'
+                      : 'glass-card border-white/25 text-white hover:border-cyan-400/50 hover:bg-white/15'
                 } disabled:opacity-70`}
               >
                 {opt}
