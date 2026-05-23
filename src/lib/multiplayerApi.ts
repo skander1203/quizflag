@@ -124,23 +124,70 @@ export async function joinRoom(code: string, playerName: string): Promise<GameRo
 }
 
 export async function startGame(roomCode: string): Promise<void> {
+  const code = roomCode.toUpperCase();
+  const room = await fetchRoom(code);
+
+  if (!room) {
+    throw new Error('Partie introuvable');
+  }
+  if (room.status !== 'waiting') {
+    throw new Error('La partie a déjà démarré');
+  }
+
+  const players = await fetchPlayers(code);
+  console.log('[multiplayer] startGame', {
+    code,
+    status: room.status,
+    playerCount: players.length,
+    players: players.map((p) => p.player_name),
+  });
+
+  if (players.length < 2) {
+    throw new Error('Au moins 2 joueurs requis');
+  }
+
+  const questions = generateFlagQuestions(room.difficulty, room.question_count);
   const now = new Date().toISOString();
-  const { error } = await supabase
+
+  const { data, error } = await supabase
     .from('game_rooms')
     .update({
       status: 'playing',
+      questions,
       current_question: 0,
       start_time: now,
     })
-    .eq('code', roomCode.toUpperCase())
-    .eq('status', 'waiting');
+    .eq('code', code)
+    .eq('status', 'waiting')
+    .select()
+    .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    console.log('[multiplayer] startGame update error', error);
+    throw error;
+  }
 
-  await supabase
+  if (!data) {
+    console.log('[multiplayer] startGame no rows updated', { code });
+    throw new Error('Impossible de démarrer la partie');
+  }
+
+  console.log('[multiplayer] game started', {
+    code,
+    status: data.status,
+    questionCount: questions.length,
+    currentQuestion: data.current_question,
+  });
+
+  const { error: playersError } = await supabase
     .from('game_players')
     .update({ answered: false })
-    .eq('room_code', roomCode.toUpperCase());
+    .eq('room_code', code);
+
+  if (playersError) {
+    console.log('[multiplayer] startGame reset players error', playersError);
+    throw playersError;
+  }
 }
 
 export async function submitAnswer(
@@ -240,7 +287,14 @@ export function subscribeToRoom(
       },
       async () => {
         const room = await fetchRoom(code);
-        if (room) callbacks.onRoomUpdate(room);
+        if (room) {
+          console.log('[multiplayer] room updated', {
+            code,
+            status: room.status,
+            currentQuestion: room.current_question,
+          });
+          callbacks.onRoomUpdate(room);
+        }
       },
     )
     .on(
@@ -253,10 +307,17 @@ export function subscribeToRoom(
       },
       async () => {
         const players = await fetchPlayers(code);
+        console.log('[multiplayer] players updated', {
+          code,
+          playerCount: players.length,
+          players: players.map((p) => p.player_name),
+        });
         callbacks.onPlayersUpdate(players);
       },
     )
-    .subscribe();
+    .subscribe((status) => {
+      console.log('[multiplayer] subscription status', { code, status });
+    });
 
   fetchRoom(code).then((room) => {
     if (room) callbacks.onRoomUpdate(room);

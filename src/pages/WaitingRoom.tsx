@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -28,20 +28,28 @@ export function WaitingRoom() {
   const [players, setPlayers] = useState<GamePlayer[]>([]);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
-    if (!code || !session) {
+    const mpSession = getMultiplayerSession();
+    if (!code || !mpSession) {
       navigate('/multiplayer', { replace: true });
       return;
     }
-
-    let channel: RealtimeChannel | null = null;
 
     const init = async () => {
       const [roomData, playersData] = await Promise.all([
         fetchRoom(code),
         fetchPlayers(code),
       ]);
+
+      console.log('[multiplayer] waiting room init', {
+        code,
+        status: roomData?.status,
+        playerCount: playersData.length,
+        players: playersData.map((p) => p.player_name),
+        isHost,
+      });
 
       if (!roomData) {
         navigate('/multiplayer', { replace: true });
@@ -60,8 +68,13 @@ export function WaitingRoom() {
         return;
       }
 
-      channel = subscribeToRoom(code, {
+      channelRef.current = subscribeToRoom(code, {
         onRoomUpdate: (updated) => {
+          console.log('[multiplayer] waiting room status', {
+            code,
+            status: updated.status,
+            playerCount: players.length,
+          });
           setRoom(updated);
           if (updated.status === 'playing') {
             navigate(`/multiplayer/quiz/${code}`, { replace: true });
@@ -69,24 +82,42 @@ export function WaitingRoom() {
             navigate(`/multiplayer/results/${code}`, { replace: true });
           }
         },
-        onPlayersUpdate: setPlayers,
+        onPlayersUpdate: (updatedPlayers) => {
+          console.log('[multiplayer] waiting room players', {
+            code,
+            playerCount: updatedPlayers.length,
+            players: updatedPlayers.map((p) => p.player_name),
+          });
+          setPlayers(updatedPlayers);
+        },
       });
     };
 
     void init();
 
     return () => {
-      if (channel) unsubscribeFromRoom(channel);
+      if (channelRef.current) {
+        unsubscribeFromRoom(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [code, session, navigate]);
+  }, [code, navigate, isHost]);
 
   const handleStart = async () => {
+    console.log('[multiplayer] start clicked', {
+      code,
+      isHost,
+      playerCount: players.length,
+      roomStatus: room?.status,
+    });
     if (!isHost || players.length < 2) return;
     setStarting(true);
     setError(null);
     try {
       await startGame(code);
-    } catch {
+      navigate(`/multiplayer/quiz/${code}`, { replace: true });
+    } catch (err) {
+      console.log('[multiplayer] start failed', err);
       setError('Impossible de démarrer la partie.');
       setStarting(false);
     }
