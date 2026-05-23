@@ -33,7 +33,7 @@ export function MultiplayerMenu() {
           transition={{ type: 'spring', stiffness: 500, damping: 15 }}
           onClick={withClick(() => navigate('/multiplayer/create'))}
         >
-          🎮 Créer une partie
+          Créer une partie
         </motion.button>
 
         <motion.button
@@ -44,7 +44,7 @@ export function MultiplayerMenu() {
           transition={{ type: 'spring', stiffness: 500, damping: 15 }}
           onClick={withClick(() => navigate('/multiplayer/join'))}
         >
-          🔗 Rejoindre une partie
+          Rejoindre une partie
         </motion.button>
       </div>
     </div>
