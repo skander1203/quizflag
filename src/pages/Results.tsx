@@ -7,6 +7,7 @@ import { useSounds } from '../hooks/useSounds';
 import { Confetti } from '../components/Confetti';
 import { supabase } from '../lib/supabase';
 import { updateUserStatsAfterGame } from '../lib/statsApi';
+import { upsertLeaderboardBestScore } from '../lib/leaderboardApi';
 import {
   MAX_DISPLAY_SCORE,
   starRating,
@@ -77,12 +78,9 @@ export function Results() {
         difficulty: gameDifficulty,
       });
 
-      const { error: upsertError } = await supabase.from('leaderboard').upsert(
-        { player_name: profileUsername, score: finalScore, difficulty: gameDifficulty },
-        { onConflict: 'player_name,difficulty' },
-      );
-
-      if (upsertError) {
+      try {
+        await upsertLeaderboardBestScore(profileUsername, finalScore, gameDifficulty);
+      } catch (upsertError) {
         console.log('[leaderboard] upsert error', upsertError);
         return;
       }

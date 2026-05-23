@@ -15,23 +15,16 @@ interface DisplayEntry {
   difficulty: Difficulty;
 }
 
-type LeaderboardTabId =
-  | 'global'
-  | 'facile'
-  | 'normal'
-  | 'difficile'
-  | 'extreme'
-  | 'impossible';
+type LeaderboardTabId = 'facile' | 'normal' | 'difficile' | 'extreme' | 'impossible';
 
 interface LeaderboardTab {
   id: LeaderboardTabId;
   label: string;
-  difficulty: Difficulty | null;
+  difficulty: Difficulty;
   subtitle: string;
 }
 
 const LEADERBOARD_TABS: LeaderboardTab[] = [
-  { id: 'global', label: '🌍 Global', difficulty: null, subtitle: 'Top 20 mondial' },
   { id: 'facile', label: '😊 Facile', difficulty: 'facile', subtitle: 'Top 20 Facile' },
   { id: 'normal', label: '🌍 Normal', difficulty: 'normal', subtitle: 'Top 20 Normal' },
   {
@@ -49,15 +42,11 @@ const LEADERBOARD_TABS: LeaderboardTab[] = [
   },
 ];
 
-function localEntries(
-  entries: DisplayEntry[],
-  limit: number,
-  difficulty: Difficulty | null,
-): DisplayEntry[] {
-  const filtered = difficulty
-    ? entries.filter((e) => e.difficulty === difficulty)
-    : entries;
-  return [...filtered].sort((a, b) => b.score - a.score).slice(0, limit);
+function localEntries(entries: DisplayEntry[], limit: number, difficulty: Difficulty): DisplayEntry[] {
+  return [...entries]
+    .filter((e) => e.difficulty === difficulty)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
 }
 
 export function Leaderboard() {
@@ -65,7 +54,7 @@ export function Leaderboard() {
   const { state } = useQuiz();
   const { playClick, withClick } = useSounds();
   const playerName = state.player.name.trim();
-  const [activeTabId, setActiveTabId] = useState<LeaderboardTabId>('global');
+  const [activeTabId, setActiveTabId] = useState<LeaderboardTabId>('facile');
   const [entries, setEntries] = useState<DisplayEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [usingLocalFallback, setUsingLocalFallback] = useState(false);
@@ -74,7 +63,7 @@ export function Leaderboard() {
     LEADERBOARD_TABS.find((tab) => tab.id === activeTabId) ?? LEADERBOARD_TABS[0];
 
   const loadLocalFallback = useCallback(
-    (difficulty: Difficulty | null) => {
+    (difficulty: Difficulty) => {
       const local: DisplayEntry[] = state.leaderboard.map((e) => ({
         playerName: e.playerName,
         score: e.score,
@@ -90,7 +79,7 @@ export function Leaderboard() {
     async (tab: LeaderboardTab) => {
       setLoading(true);
       try {
-        const rows = await fetchTopLeaderboard(20, tab.difficulty ?? undefined);
+        const rows = await fetchTopLeaderboard(20, tab.difficulty);
         setEntries(
           rows.map((r) => ({
             playerName: r.player_name,

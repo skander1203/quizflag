@@ -182,8 +182,15 @@ export function QuizProvider({ children }: { children: ReactNode }) {
     if (savedRef.current === key) return;
     savedRef.current = key;
 
+    const playerName = state.player.name || username || 'Joueur';
+    const existingBest = leaderboard
+      .filter((e) => e.playerName === playerName && e.difficulty === session.difficulty)
+      .reduce((max, e) => Math.max(max, e.score), 0);
+
+    if (session.score <= existingBest) return;
+
     const entry: LeaderboardEntry = {
-      playerName: state.player.name || username || 'Joueur',
+      playerName,
       score: session.score,
       difficulty: session.difficulty,
       correctCount: session.correctCount,
@@ -191,7 +198,10 @@ export function QuizProvider({ children }: { children: ReactNode }) {
       timestamp: Date.now(),
     };
 
-    const next = [entry, ...leaderboard]
+    const withoutSameSlot = leaderboard.filter(
+      (e) => !(e.playerName === playerName && e.difficulty === session.difficulty),
+    );
+    const next = [entry, ...withoutSameSlot]
       .sort((a, b) => b.score - a.score)
       .slice(0, MAX_LEADERBOARD);
     setLeaderboard(next);
