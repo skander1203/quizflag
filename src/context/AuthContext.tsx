@@ -10,7 +10,6 @@ import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import {
   createProfile,
-  fetchProfile,
   buildAvatarUrl,
   isUsernameTaken,
   emailExists,
@@ -20,6 +19,10 @@ import {
 const USERNAME_TAKEN_ERROR = 'Ce pseudo est déjà pris, choisissez-en un autre';
 const GUEST_STORAGE_KEY = 'quizflag_guest';
 const GUEST_USERNAME = 'Invité';
+
+function emailPrefix(user: User): string {
+  return user.email?.split('@')[0]?.trim() ?? 'Joueur';
+}
 
 function translateAuthError(message: string): string {
   const lower = message.toLowerCase();
@@ -75,19 +78,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authRedirectTab, setAuthRedirectTab] = useState<'login' | 'register' | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadProfile = useCallback(async (userId: string) => {
-    const profile = await fetchProfile(userId);
-    setUsername(profile?.username ?? '');
-    setAvatarUrl(buildAvatarUrl(userId));
+  const loadProfile = useCallback(async (authUser: User) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username, avatar_url')
+      .eq('id', authUser.id)
+      .single();
+
+    const profileUsername = !error && data?.username ? data.username.trim() : '';
+    setUsername(profileUsername || emailPrefix(authUser));
+
+    const hasAvatar = Boolean(data?.avatar_url);
+    setAvatarUrl(hasAvatar ? buildAvatarUrl(authUser.id) : null);
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      if (currentSession?.user) {
+    let cancelled = false;
+
+    const applySession = async (nextSession: Session | null) => {
+      setSession(nextSession);
+      if (nextSession?.user) {
         sessionStorage.removeItem(GUEST_STORAGE_KEY);
         setIsGuest(false);
-        void loadProfile(currentSession.user.id);
+        await loadProfile(nextSession.user);
       } else if (sessionStorage.getItem(GUEST_STORAGE_KEY) === 'true') {
         setIsGuest(true);
         setUsername(GUEST_USERNAME);
@@ -95,31 +108,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUsername('');
         setAvatarUrl(null);
+        setIsGuest(false);
       }
-      setLoading(false);
+      if (!cancelled) {
+        setLoading(false);
+      }
+    };
+
+    void supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      if (!cancelled) {
+        void applySession(currentSession);
+      }
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      if (nextSession?.user) {
-        sessionStorage.removeItem(GUEST_STORAGE_KEY);
-        setIsGuest(false);
-        void loadProfile(nextSession.user.id);
-      } else if (sessionStorage.getItem(GUEST_STORAGE_KEY) === 'true') {
-        setIsGuest(true);
-        setUsername(GUEST_USERNAME);
-        setAvatarUrl(null);
-      } else {
-        setUsername('');
-        setAvatarUrl(null);
-        setIsGuest(false);
-      }
-      setLoading(false);
+      void applySession(nextSession);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, [loadProfile]);
 
   const signUp = useCallback(
@@ -174,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data.user) {
       sessionStorage.removeItem(GUEST_STORAGE_KEY);
       setIsGuest(false);
-      await loadProfile(data.user.id);
+      await loadProfile(data.user);
     }
     return { error: null };
   }, [loadProfile]);

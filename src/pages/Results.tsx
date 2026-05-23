@@ -6,7 +6,6 @@ import { useAuth } from '../context/AuthContext';
 import { useSounds } from '../hooks/useSounds';
 import { Confetti } from '../components/Confetti';
 import { saveBestScore } from '../lib/leaderboardApi';
-import { fetchUsername } from '../lib/profilesApi';
 import { updateUserStatsAfterGame } from '../lib/statsApi';
 import {
   MAX_DISPLAY_SCORE,
@@ -16,7 +15,7 @@ import {
 
 export function Results() {
   const navigate = useNavigate();
-  const { isGuest, user } = useAuth();
+  const { isGuest, user, username } = useAuth();
   const { state, dispatch, startGame } = useQuiz();
   const { playVictory, withClick } = useSounds();
   const session = state.session;
@@ -47,19 +46,13 @@ export function Results() {
       console.log('[stats] save failed', err);
     });
 
-    void (async () => {
-      try {
-        const playerName = (await fetchUsername(user.id)).trim();
-        if (!playerName) {
-          console.log('[leaderboard] skip save: no profile username', { userId: user.id });
-          return;
-        }
-        await saveBestScore(playerName, session.score, session.difficulty);
-      } catch (err) {
+    if (username) {
+      console.log('Saving score:', username, session.score, session.difficulty);
+      saveBestScore(username, session.score, session.difficulty).catch((err) => {
         console.log('[leaderboard] save failed', err);
-      }
-    })();
-  }, [session, isGuest, user]);
+      });
+    }
+  }, [session, isGuest, user, username]);
 
   useEffect(() => {
     if (!session?.finished || session.score <= 700 || victoryPlayedRef.current) return;
