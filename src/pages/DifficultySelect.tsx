@@ -7,15 +7,10 @@ import type { Difficulty } from '../types';
 
 export function DifficultySelect() {
   const navigate = useNavigate();
-  const { state, dispatch } = useQuiz();
+  const { dispatch } = useQuiz();
 
   const select = (id: Difficulty) => {
     dispatch({ type: 'SET_DIFFICULTY', payload: id });
-    if (!state.player.name.trim()) {
-      dispatch({ type: 'REQUEST_NAME' });
-      navigate('/');
-      return;
-    }
     dispatch({ type: 'START_GAME' });
     navigate('/quiz');
   };

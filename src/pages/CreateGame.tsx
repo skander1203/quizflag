@@ -3,7 +3,6 @@ import type { CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
-import { NameModal } from '../components/NameModal';
 import { DIFFICULTY_OPTIONS } from '../utils/difficultyConfig';
 import { createRoom } from '../lib/multiplayerApi';
 import { setMultiplayerSession } from '../lib/multiplayerSession';
@@ -13,24 +12,14 @@ const QUESTION_COUNTS = [10, 20, 30, 50] as const;
 
 export function CreateGame() {
   const navigate = useNavigate();
-  const { state, dispatch } = useQuiz();
+  const { state } = useQuiz();
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
   const [questionCount, setQuestionCount] = useState<number>(10);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pendingCreate, setPendingCreate] = useState(false);
 
   const handleCreate = async () => {
-    const name = state.player.name.trim();
-    if (!name) {
-      setPendingCreate(true);
-      dispatch({ type: 'REQUEST_NAME' });
-      return;
-    }
-    await doCreate(name);
-  };
-
-  const doCreate = async (hostName: string) => {
+    const hostName = state.player.name.trim();
     setCreating(true);
     setError(null);
     try {
@@ -48,18 +37,8 @@ export function CreateGame() {
     }
   };
 
-  const handleName = (name: string) => {
-    dispatch({ type: 'SET_PLAYER_NAME', payload: name });
-    if (pendingCreate) {
-      setPendingCreate(false);
-      void doCreate(name);
-    }
-  };
-
   return (
     <div className="flex flex-col h-full min-h-0">
-      <NameModal open={state.showNameModal} onSubmit={handleName} />
-
       <div className="shrink-0 pb-3">
         <button
           type="button"

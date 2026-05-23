@@ -2,17 +2,15 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
-import { NameModal } from '../components/NameModal';
 import { joinRoom } from '../lib/multiplayerApi';
 import { setMultiplayerSession } from '../lib/multiplayerSession';
 
 export function JoinGame() {
   const navigate = useNavigate();
-  const { state, dispatch } = useQuiz();
+  const { state } = useQuiz();
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [joining, setJoining] = useState(false);
-  const [pendingJoin, setPendingJoin] = useState(false);
 
   const handleJoin = async () => {
     const trimmed = code.trim().toUpperCase();
@@ -21,21 +19,11 @@ export function JoinGame() {
       return;
     }
 
-    const name = state.player.name.trim();
-    if (!name) {
-      setPendingJoin(true);
-      dispatch({ type: 'REQUEST_NAME' });
-      return;
-    }
-
-    await doJoin(trimmed, name);
-  };
-
-  const doJoin = async (roomCode: string, playerName: string) => {
+    const playerName = state.player.name.trim();
     setJoining(true);
     setError(null);
     try {
-      const room = await joinRoom(roomCode, playerName);
+      const room = await joinRoom(trimmed, playerName);
       setMultiplayerSession({
         roomCode: room.code,
         playerName,
@@ -53,21 +41,8 @@ export function JoinGame() {
     }
   };
 
-  const handleName = (name: string) => {
-    dispatch({ type: 'SET_PLAYER_NAME', payload: name });
-    if (pendingJoin) {
-      setPendingJoin(false);
-      const trimmed = code.trim().toUpperCase();
-      if (trimmed.length === 6) {
-        void doJoin(trimmed, name);
-      }
-    }
-  };
-
   return (
     <div className="flex flex-col h-full min-h-0">
-      <NameModal open={state.showNameModal} onSubmit={handleName} />
-
       <div className="shrink-0 pb-4">
         <button
           type="button"

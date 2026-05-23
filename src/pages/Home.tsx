@@ -1,52 +1,16 @@
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useQuiz } from '../context/QuizContext';
 import { FlagParade } from '../components/FlagParade';
-import { NameModal } from '../components/NameModal';
 import { CreditsModal } from '../components/CreditsModal';
-import { useLocalStorage } from '../hooks/useLocalStorage';
-import { STORAGE_PLAYER } from '../context/QuizContext';
-import type { PlayerData } from '../types';
+import { UserMenu } from '../components/UserMenu';
+import { useState } from 'react';
 
 export function Home() {
   const navigate = useNavigate();
-  const { state, dispatch } = useQuiz();
   const [creditsOpen, setCreditsOpen] = useState(false);
-  const [pendingNav, setPendingNav] = useState<'solo' | 'multiplayer' | null>(null);
-  const [, setStoredPlayer] = useLocalStorage<PlayerData>(STORAGE_PLAYER, {
-    name: '',
-  });
-
-  const play = () => {
-    if (!state.player.name.trim()) {
-      setPendingNav('solo');
-      dispatch({ type: 'REQUEST_NAME' });
-      return;
-    }
-    navigate('/difficulty');
-  };
-
-  const multiplayer = () => {
-    if (!state.player.name.trim()) {
-      setPendingNav('multiplayer');
-      dispatch({ type: 'REQUEST_NAME' });
-      return;
-    }
-    navigate('/multiplayer');
-  };
-
-  const handleName = (name: string) => {
-    setStoredPlayer({ name });
-    dispatch({ type: 'SET_PLAYER_NAME', payload: name });
-    const dest = pendingNav;
-    setPendingNav(null);
-    navigate(dest === 'multiplayer' ? '/multiplayer' : '/difficulty');
-  };
 
   return (
     <div className="relative flex flex-col h-full min-h-0 overflow-hidden">
-      <NameModal open={state.showNameModal} onSubmit={handleName} />
       <CreditsModal open={creditsOpen} onClose={() => setCreditsOpen(false)} />
 
       <button
@@ -61,22 +25,24 @@ export function Home() {
       </button>
 
       <div className="flex flex-col h-full min-h-0 gap-4 sm:gap-5 pb-16">
-        <motion.header
-          className="text-center shrink-0 pt-2 sm:pt-4"
-          initial={{ y: -12, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 220, damping: 20 }}
-        >
-          <h1 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-pink-400 via-yellow-300 to-cyan-400 bg-clip-text text-transparent flex items-center justify-center gap-2">
-            <span>QuizFlag</span>
-            <span aria-hidden="true">🏆</span>
-          </h1>
-          <p className="text-white/70 mt-1 text-sm sm:text-base font-semibold px-2">
-            Devinez les drapeaux du monde !
-          </p>
-        </motion.header>
+        <div className="relative shrink-0 pt-2 sm:pt-4">
+          <UserMenu />
+          <motion.header
+            className="text-center"
+            initial={{ y: -12, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 220, damping: 20 }}
+          >
+            <h1 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-pink-400 via-yellow-300 to-cyan-400 bg-clip-text text-transparent flex items-center justify-center gap-2">
+              <span>QuizFlag</span>
+              <span aria-hidden="true">🏆</span>
+            </h1>
+            <p className="text-white/70 mt-1 text-sm sm:text-base font-semibold px-2">
+              Devinez les drapeaux du monde !
+            </p>
+          </motion.header>
+        </div>
 
-        {/* -mx-4 sm:-mx-5 cancels Layout's px-4 sm:px-5 so the parade is edge-to-edge */}
         <FlagParade bleedClass="-mx-4 sm:-mx-5" />
 
         <div className="flex-1 flex flex-col justify-center gap-4 shrink-0 py-2">
@@ -86,7 +52,7 @@ export function Home() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.94 }}
             transition={{ type: 'spring', stiffness: 500, damping: 15 }}
-            onClick={play}
+            onClick={() => navigate('/difficulty')}
           >
             Jouer
           </motion.button>
@@ -97,7 +63,7 @@ export function Home() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.94 }}
             transition={{ type: 'spring', stiffness: 500, damping: 15 }}
-            onClick={multiplayer}
+            onClick={() => navigate('/multiplayer')}
           >
             Multijoueur
           </motion.button>

@@ -17,8 +17,8 @@ import type {
 import { generateFlagQuestions } from '../data/countries';
 import { pointsForAnswer, speedBonusPoints, QUESTIONS_PER_GAME } from '../utils/scoring';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useAuth } from './AuthContext';
 
-const STORAGE_PLAYER = 'quizflag_player';
 const STORAGE_LEADERBOARD = 'quizflag_leaderboard';
 const MAX_LEADERBOARD = 10;
 
@@ -28,7 +28,6 @@ type QuizState = {
   session: GameSession | null;
   leaderboard: LeaderboardEntry[];
   feedback: 'idle' | 'correct' | 'wrong' | null;
-  showNameModal: boolean;
 };
 
 type Action =
@@ -43,7 +42,6 @@ type Action =
   | { type: 'TIMEOUT' }
   | { type: 'CLEAR_FEEDBACK' }
   | { type: 'CLEAR_SESSION' }
-  | { type: 'REQUEST_NAME' }
   | { type: 'LOAD_LEADERBOARD'; payload: LeaderboardEntry[] };
 
 function reducer(state: QuizState, action: Action): QuizState {
@@ -54,10 +52,7 @@ function reducer(state: QuizState, action: Action): QuizState {
       return {
         ...state,
         player: { ...state.player, name: action.payload },
-        showNameModal: false,
       };
-    case 'REQUEST_NAME':
-      return { ...state, showNameModal: true };
     case 'LOAD_LEADERBOARD':
       return { ...state, leaderboard: action.payload };
     case 'START_GAME':
@@ -143,36 +138,27 @@ const QuizContext = createContext<{
 } | null>(null);
 
 export function QuizProvider({ children }: { children: ReactNode }) {
-  const [player, setPlayer] = useLocalStorage<PlayerData>(STORAGE_PLAYER, {
-    name: '',
-  });
+  const { username } = useAuth();
   const [leaderboard, setLeaderboard] = useLocalStorage<LeaderboardEntry[]>(
     STORAGE_LEADERBOARD,
     [],
   );
 
   const [state, dispatch] = useReducer(reducer, {
-    player,
+    player: { name: username },
     difficulty: 'facile',
     session: null,
     leaderboard,
     feedback: null,
-    showNameModal: !player.name.trim(),
   });
 
   useEffect(() => {
-    if (player.name && state.player.name !== player.name) {
-      dispatch({ type: 'SET_PLAYER_NAME', payload: player.name });
+    if (username && state.player.name !== username) {
+      dispatch({ type: 'SET_PLAYER_NAME', payload: username });
     }
-  }, [player.name]);
+  }, [username]);
 
   const savedRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!player.name && state.player.name) {
-      setPlayer(state.player);
-    }
-  }, [state.player.name]);
 
   useEffect(() => {
     dispatch({ type: 'LOAD_LEADERBOARD', payload: leaderboard });
@@ -185,12 +171,8 @@ export function QuizProvider({ children }: { children: ReactNode }) {
     if (savedRef.current === key) return;
     savedRef.current = key;
 
-    setPlayer({
-      name: state.player.name || player.name,
-    });
-
     const entry: LeaderboardEntry = {
-      playerName: state.player.name || player.name || 'Joueur',
+      playerName: state.player.name || username || 'Joueur',
       score: session.score,
       difficulty: session.difficulty,
       correctCount: session.correctCount,
@@ -215,7 +197,7 @@ export function QuizProvider({ children }: { children: ReactNode }) {
         state: {
           ...state,
           player: {
-            name: state.player.name || player.name,
+            name: state.player.name || username,
           },
           leaderboard,
         },
@@ -233,5 +215,3 @@ export function useQuiz() {
   if (!ctx) throw new Error('useQuiz must be used within QuizProvider');
   return ctx;
 }
-
-export { STORAGE_PLAYER };
