@@ -1,13 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import {
   fetchPlayers,
   fetchRoom,
+  removeSubscription,
   startGame,
-  subscribeToRoom,
-  unsubscribeFromRoom,
+  subscribeToGamePlayers,
+  subscribeToGameRoom,
   type GamePlayer,
   type GameRoom,
 } from '../lib/multiplayerApi';
@@ -28,7 +29,21 @@ export function WaitingRoom() {
   const [players, setPlayers] = useState<GamePlayer[]>([]);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  const roomSubRef = useRef<RealtimeChannel | null>(null);
+  const playersSubRef = useRef<RealtimeChannel | null>(null);
+
+  const handleRoomChange = useCallback(
+    (updated: GameRoom) => {
+      setRoom(updated);
+      if (updated.status === 'playing') {
+        navigate(`/multiplayer/quiz/${code}`, { replace: true });
+      } else if (updated.status === 'finished') {
+        navigate(`/multiplayer/results/${code}`, { replace: true });
+      }
+    },
+    [code, navigate],
+  );
 
   useEffect(() => {
     const mpSession = getMultiplayerSession();
@@ -37,19 +52,15 @@ export function WaitingRoom() {
       return;
     }
 
+    let cancelled = false;
+
     const init = async () => {
       const [roomData, playersData] = await Promise.all([
         fetchRoom(code),
         fetchPlayers(code),
       ]);
 
-      console.log('[multiplayer] waiting room init', {
-        code,
-        status: roomData?.status,
-        playerCount: playersData.length,
-        players: playersData.map((p) => p.player_name),
-        isHost,
-      });
+      if (cancelled) return;
 
       if (!roomData) {
         navigate('/multiplayer', { replace: true });
@@ -68,56 +79,32 @@ export function WaitingRoom() {
         return;
       }
 
-      channelRef.current = subscribeToRoom(code, {
-        onRoomUpdate: (updated) => {
-          console.log('[multiplayer] waiting room status', {
-            code,
-            status: updated.status,
-            playerCount: players.length,
-          });
-          setRoom(updated);
-          if (updated.status === 'playing') {
-            navigate(`/multiplayer/quiz/${code}`, { replace: true });
-          } else if (updated.status === 'finished') {
-            navigate(`/multiplayer/results/${code}`, { replace: true });
-          }
-        },
-        onPlayersUpdate: (updatedPlayers) => {
-          console.log('[multiplayer] waiting room players', {
-            code,
-            playerCount: updatedPlayers.length,
-            players: updatedPlayers.map((p) => p.player_name),
-          });
-          setPlayers(updatedPlayers);
-        },
-      });
+      roomSubRef.current = subscribeToGameRoom(code, handleRoomChange);
+      playersSubRef.current = subscribeToGamePlayers(code, setPlayers);
     };
 
     void init();
 
     return () => {
-      if (channelRef.current) {
-        unsubscribeFromRoom(channelRef.current);
-        channelRef.current = null;
+      cancelled = true;
+      if (roomSubRef.current) {
+        removeSubscription(roomSubRef.current);
+        roomSubRef.current = null;
+      }
+      if (playersSubRef.current) {
+        removeSubscription(playersSubRef.current);
+        playersSubRef.current = null;
       }
     };
-  }, [code, navigate, isHost]);
+  }, [code, navigate, handleRoomChange]);
 
   const handleStart = async () => {
-    console.log('[multiplayer] start clicked', {
-      code,
-      isHost,
-      playerCount: players.length,
-      roomStatus: room?.status,
-    });
     if (!isHost || players.length < 2) return;
     setStarting(true);
     setError(null);
     try {
       await startGame(code);
-      navigate(`/multiplayer/quiz/${code}`, { replace: true });
-    } catch (err) {
-      console.log('[multiplayer] start failed', err);
+    } catch {
       setError('Impossible de démarrer la partie.');
       setStarting(false);
     }

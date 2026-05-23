@@ -1,11 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { Confetti } from '../components/Confetti';
 import { PlayerAvatar } from '../components/PlayerAvatar';
 import {
   fetchPlayers,
   fetchRoom,
+  removeSubscription,
+  subscribeToGamePlayers,
+  subscribeToGameRoom,
   type GamePlayer,
 } from '../lib/multiplayerApi';
 import {
@@ -31,25 +35,69 @@ export function MultiplayerResults() {
   const [players, setPlayers] = useState<GamePlayer[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const roomSubRef = useRef<RealtimeChannel | null>(null);
+  const playersSubRef = useRef<RealtimeChannel | null>(null);
+
+  const sortPlayers = useCallback((list: GamePlayer[]) => {
+    setPlayers([...list].sort((a, b) => b.score - a.score));
+  }, []);
+
   useEffect(() => {
     if (!code) {
       navigate('/multiplayer', { replace: true });
       return;
     }
 
-    const load = async () => {
+    let cancelled = false;
+
+    const init = async () => {
       const room = await fetchRoom(code);
+      if (cancelled) return;
+
       if (!room) {
         navigate('/multiplayer', { replace: true });
         return;
       }
+
+      if (room.status === 'playing') {
+        navigate(`/multiplayer/quiz/${code}`, { replace: true });
+        return;
+      }
+      if (room.status === 'waiting') {
+        navigate(`/multiplayer/waiting/${code}`, { replace: true });
+        return;
+      }
+
       const data = await fetchPlayers(code);
-      setPlayers([...data].sort((a, b) => b.score - a.score));
+      if (cancelled) return;
+
+      sortPlayers(data);
       setLoading(false);
+
+      roomSubRef.current = subscribeToGameRoom(code, (updated) => {
+        if (updated.status === 'playing') {
+          navigate(`/multiplayer/quiz/${code}`, { replace: true });
+        } else if (updated.status === 'waiting') {
+          navigate(`/multiplayer/waiting/${code}`, { replace: true });
+        }
+      });
+      playersSubRef.current = subscribeToGamePlayers(code, sortPlayers);
     };
 
-    void load();
-  }, [code, navigate]);
+    void init();
+
+    return () => {
+      cancelled = true;
+      if (roomSubRef.current) {
+        removeSubscription(roomSubRef.current);
+        roomSubRef.current = null;
+      }
+      if (playersSubRef.current) {
+        removeSubscription(playersSubRef.current);
+        playersSubRef.current = null;
+      }
+    };
+  }, [code, navigate, sortPlayers]);
 
   if (loading) {
     return (

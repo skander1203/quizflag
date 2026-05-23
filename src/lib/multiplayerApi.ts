@@ -125,35 +125,17 @@ export async function joinRoom(code: string, playerName: string): Promise<GameRo
 
 export async function startGame(roomCode: string): Promise<void> {
   const code = roomCode.toUpperCase();
-  const room = await fetchRoom(code);
-
-  if (!room) {
-    throw new Error('Partie introuvable');
-  }
-  if (room.status !== 'waiting') {
-    throw new Error('La partie a déjà démarré');
-  }
-
   const players = await fetchPlayers(code);
-  console.log('[multiplayer] startGame', {
-    code,
-    status: room.status,
-    playerCount: players.length,
-    players: players.map((p) => p.player_name),
-  });
 
   if (players.length < 2) {
     throw new Error('Au moins 2 joueurs requis');
   }
 
-  const questions = generateFlagQuestions(room.difficulty, room.question_count);
   const now = new Date().toISOString();
-
   const { data, error } = await supabase
     .from('game_rooms')
     .update({
       status: 'playing',
-      questions,
       current_question: 0,
       start_time: now,
     })
@@ -162,32 +144,29 @@ export async function startGame(roomCode: string): Promise<void> {
     .select()
     .maybeSingle();
 
-  if (error) {
-    console.log('[multiplayer] startGame update error', error);
-    throw error;
-  }
-
+  if (error) throw error;
   if (!data) {
-    console.log('[multiplayer] startGame no rows updated', { code });
     throw new Error('Impossible de démarrer la partie');
   }
 
-  console.log('[multiplayer] game started', {
-    code,
-    status: data.status,
-    questionCount: questions.length,
-    currentQuestion: data.current_question,
-  });
+  await supabase.from('game_players').update({ answered: false }).eq('room_code', code);
+}
 
-  const { error: playersError } = await supabase
-    .from('game_players')
-    .update({ answered: false })
-    .eq('room_code', code);
+export async function hasAnsweredQuestion(
+  roomCode: string,
+  playerName: string,
+  questionIndex: number,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('game_answers')
+    .select('id')
+    .eq('room_code', roomCode.toUpperCase())
+    .eq('player_name', playerName)
+    .eq('question_index', questionIndex)
+    .maybeSingle();
 
-  if (playersError) {
-    console.log('[multiplayer] startGame reset players error', playersError);
-    throw playersError;
-  }
+  if (error) throw error;
+  return !!data;
 }
 
 export async function submitAnswer(
@@ -200,14 +179,9 @@ export async function submitAnswer(
 ): Promise<void> {
   const code = roomCode.toUpperCase();
 
-  console.log('[multiplayer] submitAnswer', {
-    code,
-    playerName,
-    questionIndex,
-    isCorrect,
-    timeTaken,
-    points,
-  });
+  if (await hasAnsweredQuestion(code, playerName, questionIndex)) {
+    return;
+  }
 
   const { error: answerError } = await supabase.from('game_answers').insert({
     room_code: code,
@@ -217,26 +191,16 @@ export async function submitAnswer(
     time_taken: timeTaken,
   });
 
-  if (answerError) {
-    console.log('[multiplayer] submitAnswer insert error', answerError);
-    throw answerError;
-  }
+  if (answerError) throw answerError;
 
   const { data: player, error: playerError } = await supabase
     .from('game_players')
-    .select('score, answered')
+    .select('score')
     .eq('room_code', code)
     .eq('player_name', playerName)
     .single();
 
-  if (playerError) {
-    console.log('[multiplayer] submitAnswer player fetch error', playerError);
-    throw playerError;
-  }
-  if (player?.answered) {
-    console.log('[multiplayer] submitAnswer skipped — already answered', { playerName, questionIndex });
-    return;
-  }
+  if (playerError) throw playerError;
 
   const { error: updateError } = await supabase
     .from('game_players')
@@ -247,27 +211,17 @@ export async function submitAnswer(
     .eq('room_code', code)
     .eq('player_name', playerName);
 
-  if (updateError) {
-    console.log('[multiplayer] submitAnswer score update error', updateError);
-    throw updateError;
-  }
-
-  console.log('[multiplayer] submitAnswer success', {
-    playerName,
-    newScore: (player?.score ?? 0) + points,
-    questionIndex,
-  });
+  if (updateError) throw updateError;
 }
 
 export async function countAnswersForQuestion(
   roomCode: string,
   questionIndex: number,
 ): Promise<number> {
-  const code = roomCode.toUpperCase();
   const { data, error } = await supabase
     .from('game_answers')
     .select('player_name')
-    .eq('room_code', code)
+    .eq('room_code', roomCode.toUpperCase())
     .eq('question_index', questionIndex);
 
   if (error) throw error;
@@ -281,8 +235,6 @@ export async function advanceQuestion(
 ): Promise<void> {
   const code = roomCode.toUpperCase();
   const nextIndex = currentIndex + 1;
-
-  console.log('[multiplayer] advanceQuestion', { code, currentIndex, nextIndex, totalQuestions });
 
   if (nextIndex >= totalQuestions) {
     const { data, error } = await supabase
@@ -321,32 +273,17 @@ export async function advanceQuestion(
     throw new Error('Advance failed — question already advanced');
   }
 
-  const { error: playersError } = await supabase
-    .from('game_players')
-    .update({ answered: false })
-    .eq('room_code', code);
-
-  if (playersError) throw playersError;
-
-  console.log('[multiplayer] advanceQuestion success', {
-    code,
-    currentQuestion: data.current_question,
-  });
+  await supabase.from('game_players').update({ answered: false }).eq('room_code', code);
 }
 
-export interface RoomSubscriptionCallbacks {
-  onRoomUpdate: (room: GameRoom) => void;
-  onPlayersUpdate: (players: GamePlayer[]) => void;
-}
-
-export function subscribeToRoom(
+export function subscribeToGameRoom(
   roomCode: string,
-  callbacks: RoomSubscriptionCallbacks,
+  onRoomChange: (room: GameRoom) => void,
 ): RealtimeChannel {
   const code = roomCode.toUpperCase();
 
-  const channel = supabase
-    .channel(`room:${code}`)
+  return supabase
+    .channel(`room-${code}`)
     .on(
       'postgres_changes',
       {
@@ -355,18 +292,27 @@ export function subscribeToRoom(
         table: 'game_rooms',
         filter: `code=eq.${code}`,
       },
-      async () => {
-        const room = await fetchRoom(code);
-        if (room) {
-          console.log('[multiplayer] room updated', {
-            code,
-            status: room.status,
-            currentQuestion: room.current_question,
-          });
-          callbacks.onRoomUpdate(room);
+      (payload) => {
+        if (payload.new) {
+          onRoomChange(normalizeRoom(payload.new as Record<string, unknown>));
         }
       },
     )
+    .subscribe();
+}
+
+export function subscribeToGamePlayers(
+  roomCode: string,
+  onPlayersChange: (players: GamePlayer[]) => void,
+): RealtimeChannel {
+  const code = roomCode.toUpperCase();
+
+  const fetchAllPlayers = () => {
+    void fetchPlayers(code).then(onPlayersChange);
+  };
+
+  return supabase
+    .channel(`players-${code}`)
     .on(
       'postgres_changes',
       {
@@ -375,43 +321,15 @@ export function subscribeToRoom(
         table: 'game_players',
         filter: `room_code=eq.${code}`,
       },
-      async () => {
-        const players = await fetchPlayers(code);
-        console.log('[multiplayer] players updated', {
-          code,
-          playerCount: players.length,
-          players: players.map((p) => p.player_name),
-        });
-        callbacks.onPlayersUpdate(players);
+      () => {
+        fetchAllPlayers();
       },
     )
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'game_answers',
-        filter: `room_code=eq.${code}`,
-      },
-      async () => {
-        const players = await fetchPlayers(code);
-        callbacks.onPlayersUpdate(players);
-      },
-    )
-    .subscribe((status) => {
-      console.log('[multiplayer] subscription status', { code, status });
-    });
-
-  fetchRoom(code).then((room) => {
-    if (room) callbacks.onRoomUpdate(room);
-  });
-  fetchPlayers(code).then(callbacks.onPlayersUpdate);
-
-  return channel;
+    .subscribe();
 }
 
-export function unsubscribeFromRoom(channel: RealtimeChannel): void {
-  supabase.removeChannel(channel);
+export function removeSubscription(channel: RealtimeChannel): void {
+  void supabase.removeChannel(channel);
 }
 
 function parseQuestions(raw: unknown): FlagQuestion[] | null {
@@ -427,7 +345,7 @@ function parseQuestions(raw: unknown): FlagQuestion[] | null {
   return Array.isArray(raw) ? (raw as FlagQuestion[]) : null;
 }
 
-function normalizeRoom(row: Record<string, unknown>): GameRoom {
+export function normalizeRoom(row: Record<string, unknown>): GameRoom {
   return {
     id: row.id as string,
     code: row.code as string,
