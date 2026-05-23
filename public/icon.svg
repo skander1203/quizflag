@@ -4,19 +4,62 @@
       <stop offset="0%" stop-color="#ec4899"/>
       <stop offset="100%" stop-color="#7c3aed"/>
     </linearGradient>
+
+    <radialGradient id="oceanShade" cx="36%" cy="36%" r="64%">
+      <stop offset="0%" stop-color="#1a6bb5"/>
+      <stop offset="52%" stop-color="#1a6bb5"/>
+      <stop offset="100%" stop-color="#0d4a8a"/>
+    </radialGradient>
+
     <clipPath id="iconClip">
       <rect width="512" height="512" rx="100" ry="100"/>
+    </clipPath>
+
+    <clipPath id="globeClip">
+      <circle cx="256" cy="268" r="168"/>
     </clipPath>
   </defs>
 
   <g clip-path="url(#iconClip)">
     <rect width="512" height="512" fill="url(#bg)"/>
 
-    <!-- Globe ocean -->
-    <circle cx="256" cy="268" r="168" fill="#1a6bb5"/>
+    <!-- Globe ocean with 3D shading -->
+    <circle cx="256" cy="268" r="168" fill="url(#oceanShade)"/>
 
-    <!-- Latitude lines -->
-    <g fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="2.5">
+    <g clip-path="url(#globeClip)">
+      <!-- North polar ice -->
+      <ellipse cx="256" cy="118" rx="72" ry="18" fill="#e8f4f8"/>
+
+      <!-- Greenland -->
+      <path fill="#e8f4f8" d="M162 122c14-10 34-8 44 4 10 12 6 28-6 36-12 8-30 6-38-6-8-12-4-26 0-34z"/>
+
+      <!-- North America -->
+      <path fill="#4a7c3f" d="M108 152c-6 16-4 36 6 52 10 16 12 34 8 52-4 18-14 34-12 52 2 18 16 28 28 22 12-6 16-24 12-42-4-18 0-38 10-54 10-16 8-34-4-48-12-14-32-18-48-14z"/>
+
+      <!-- South America -->
+      <path fill="#4a7c3f" d="M152 268c-8 14-10 32-4 48 6 16 18 28 28 24 10-4 12-20 8-36-4-16-2-34 6-48 8-14 10-32 2-46-8-14-24-20-40-16z"/>
+
+      <!-- Europe / Asia -->
+      <path fill="#4a7c3f" d="M286 128c18-8 40-4 54 12 14 16 18 38 12 58-6 20-22 36-42 42-20 6-42 0-54-18-12-18-12-42-2-60 10-18 28-32 50-32 14 0 26 10 28 24 2 14-8 26-22 30-14 4-30-2-36-16-6-14-2-30 10-38 12-8 28-6 36 6 8 12 4 26-8 34-12 8-26 6-36-4-10-10-14-24-10-36 4-12 18-18 30-14 12 4 20 16 18 28-2 12-14 20-26 18-12-2-20-14-18-26 2-12 14-20 26-18 12 2 18 14 14 26-4 12-18 18-30 14z"/>
+
+      <!-- Sahara -->
+      <path fill="#c4a35a" d="M262 210c14-6 32-4 44 8 12 12 14 30 6 44-8 14-26 22-42 18-16-4-28-20-26-36 2-16 14-30 30-34z"/>
+
+      <!-- Middle East -->
+      <path fill="#c4a35a" d="M318 232c10-2 20 4 24 14 4 10 0 22-10 28-10 6-24 4-30-6-6-10-2-24 8-32 4-2 6-4 8-4z"/>
+
+      <!-- Africa -->
+      <path fill="#4a7c3f" d="M274 184c-12 6-20 20-22 36-2 16 4 32 10 48 6 16 8 32 2 48-6 16-20 28-36 30-16 2-32-6-40-20-8-14-8-32-2-48 6-16 18-28 32-32 14-4 24-16 24-32 0-16-12-28-26-30-14-2-28 6-32 20-4 14 6 28 20 34 14 6 30 2 38-10 8-12 6-28-4-40-10-12-26-14-38-4z"/>
+
+      <!-- Australia -->
+      <path fill="#4a7c3f" d="M368 338c10-2 20 4 24 16 4 12-2 24-14 28-12 4-26-2-32-14-6-12 0-26 10-32 4-2 8-2 12-2z"/>
+
+      <!-- Antarctica -->
+      <path fill="#e8f4f8" d="M120 378c30 16 68 24 106 24s76-8 106-24c-20 18-58 28-106 28s-86-10-106-28z"/>
+    </g>
+
+    <!-- Latitude / longitude lines -->
+    <g clip-path="url(#globeClip)" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="2.5">
       <ellipse cx="256" cy="268" rx="168" ry="42"/>
       <ellipse cx="256" cy="268" rx="168" ry="84"/>
       <ellipse cx="256" cy="268" rx="168" ry="126"/>
@@ -25,35 +68,52 @@
       <ellipse cx="256" cy="268" rx="126" ry="168"/>
     </g>
 
-    <!-- Continents -->
-    <g fill="#2d8a4e">
-      <!-- Americas -->
-      <path d="M148 196c-10 18-14 42-8 64 6 22 18 38 22 58 4 20-2 36-10 48-8 12-6 24 2 30 8 6 18 2 24-10 6-12 8-30 4-48-4-18-2-38 6-56 8-18 10-38 2-54-8-16-24-28-42-32z"/>
-      <path d="M168 318c-4 14-2 28 4 36 6 8 14 8 20 0 6-8 8-22 4-34-4-12-12-18-18-14-6 4-8 8-10 12z"/>
-      <!-- Africa -->
-      <path d="M268 168c-14 4-24 18-26 34-2 16 4 32 8 48 4 16 2 34-6 50-8 16-22 28-24 44-2 16 8 30 22 34 14 4 28-4 34-18 6-14 4-32-2-48-6-16-8-34-4-52 4-18 14-34 28-42 14-8 18-22 10-34-8-12-26-18-40-16z"/>
-      <!-- Europe / Asia -->
-      <path d="M292 132c18-6 38-2 52 10 14 12 22 30 24 48 2 18-4 36-16 48-12 12-28 16-42 12-14-4-26-16-32-30-6-14-4-30 4-44 8-14 22-24 38-28 10-2 18-10 16-18-2-8-12-12-24-10-12 2-22 8-28 16-6 8-8 18-4 26 4 8 12 12 20 10 8-2 14-8 16-16 2-8-2-16-8-20z"/>
-      <path d="M348 196c12 2 22 10 28 22 6 12 6 26 0 38-6 12-18 20-32 22-14 2-28-4-36-16-8-12-8-28-2-40 6-12 18-20 32-22 4 0 8-2 10-4z"/>
-    </g>
-
-    <!-- Globe outline -->
+    <!-- Globe rim -->
     <circle cx="256" cy="268" r="168" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="3"/>
 
-    <!-- Flag pins -->
+    <!-- Flag pins (3× larger than original: 48×30 flag, 42px pole) -->
     <g>
-      <!-- Red flag -->
-      <line x1="198" y1="214" x2="198" y2="248" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
-      <rect x="198" y="206" width="16" height="10" rx="1" fill="#ef4444"/>
-      <!-- Blue flag -->
-      <line x1="312" y1="188" x2="312" y2="222" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
-      <rect x="312" y="180" width="16" height="10" rx="1" fill="#3b82f6"/>
-      <!-- Green flag -->
-      <line x1="330" y1="268" x2="330" y2="302" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
-      <rect x="330" y="260" width="16" height="10" rx="1" fill="#22c55e"/>
-      <!-- Yellow flag -->
-      <line x1="178" y1="292" x2="178" y2="326" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
-      <rect x="178" y="284" width="16" height="10" rx="1" fill="#eab308"/>
+      <!-- France — Europe -->
+      <g transform="translate(318, 168)">
+        <line x1="0" y1="0" x2="0" y2="42" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+        <rect x="0" y="-30" width="48" height="30" rx="2" fill="#ffffff"/>
+        <rect x="0" y="-30" width="16" height="30" fill="#002395"/>
+        <rect x="32" y="-30" width="16" height="30" fill="#ed2939"/>
+      </g>
+
+      <!-- Brazil — South America -->
+      <g transform="translate(158, 302)">
+        <line x1="0" y1="0" x2="0" y2="42" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+        <rect x="0" y="-30" width="48" height="30" rx="2" fill="#009c3b"/>
+        <polygon points="24,-24 38,-15 32,0 24,6 16,0 10,-15" fill="#ffdf00"/>
+        <circle cx="24" cy="-9" r="5" fill="#002776"/>
+      </g>
+
+      <!-- USA — North America -->
+      <g transform="translate(132, 188)">
+        <line x1="0" y1="0" x2="0" y2="42" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+        <rect x="0" y="-30" width="48" height="30" rx="2" fill="#ffffff"/>
+        <rect x="0" y="-30" width="20" height="16" fill="#3c3b6e"/>
+        <rect x="0" y="-14" width="48" height="4" fill="#b22234"/>
+        <rect x="0" y="-6" width="48" height="4" fill="#b22234"/>
+        <rect x="0" y="2" width="48" height="4" fill="#b22234"/>
+        <rect x="0" y="-22" width="48" height="4" fill="#b22234"/>
+      </g>
+
+      <!-- Japan — Asia -->
+      <g transform="translate(392, 208)">
+        <line x1="0" y1="0" x2="0" y2="42" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+        <rect x="0" y="-30" width="48" height="30" rx="2" fill="#ffffff" stroke="#d1d5db" stroke-width="0.5"/>
+        <circle cx="24" cy="-15" r="9" fill="#bc002d"/>
+      </g>
+
+      <!-- Nigeria — Africa -->
+      <g transform="translate(286, 268)">
+        <line x1="0" y1="0" x2="0" y2="42" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+        <rect x="0" y="-30" width="48" height="30" rx="2" fill="#ffffff"/>
+        <rect x="0" y="-30" width="16" height="30" fill="#008751"/>
+        <rect x="32" y="-30" width="16" height="30" fill="#008751"/>
+      </g>
     </g>
   </g>
 </svg>
