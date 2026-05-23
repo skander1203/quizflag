@@ -15,7 +15,7 @@
 
 @layer base {
   html, body, #root {
-    background-color: #2d1b69;
+    background: linear-gradient(135deg, #1a0533 0%, #2d0a5c 50%, #1a0533 100%);
     overscroll-behavior: none;
     min-height: 100vh;
     min-height: 100dvh;
