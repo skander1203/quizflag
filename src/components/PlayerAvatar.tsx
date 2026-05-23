@@ -17,27 +17,6 @@ const SIZE_CLASSES = {
   lg: 'w-14 h-14 text-xl',
 } as const;
 
-function LetterFallback({
-  name,
-  sizeClass,
-  className,
-}: {
-  name: string;
-  sizeClass: string;
-  className: string;
-}) {
-  const initial = name.charAt(0).toUpperCase() || '?';
-
-  return (
-    <span
-      className={`${sizeClass} rounded-full bg-gradient-to-br ${avatarGradientClass(name)} flex items-center justify-center font-extrabold text-white shrink-0 ${className}`}
-      aria-hidden="true"
-    >
-      {initial}
-    </span>
-  );
-}
-
 export function PlayerAvatar({
   name,
   avatarUrl,
@@ -47,29 +26,32 @@ export function PlayerAvatar({
 }: PlayerAvatarProps) {
   const sizeClass = SIZE_CLASSES[size];
   const [imgError, setImgError] = useState(false);
+  const initial = name.charAt(0).toUpperCase() || '?';
+  const showPhoto = Boolean(avatarUrl) && !imgError;
 
   useEffect(() => {
     setImgError(false);
   }, [avatarUrl]);
 
-  if (avatarUrl && !imgError) {
+  const circleClass = `${sizeClass} rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/20 ${className}`;
+
+  if (showPhoto) {
     return (
-      <img
-        src={avatarUrl}
-        alt=""
-        onError={() => {
-          console.log('[avatar] img load failed', { name, avatarUrl });
-          setImgError(true);
-        }}
-        className={`${sizeClass} rounded-full object-cover shrink-0 border border-white/20 ${className}`}
-      />
+      <span className={circleClass} aria-hidden="true">
+        <img
+          src={avatarUrl!}
+          alt=""
+          onError={() => setImgError(true)}
+          className="w-full h-full object-cover rounded-[50%]"
+        />
+      </span>
     );
   }
 
   if (isGuest) {
     return (
       <span
-        className={`${sizeClass} rounded-full bg-white/15 border border-white/25 flex items-center justify-center shrink-0 ${className}`}
+        className={`${circleClass} bg-white/15 border-white/25`}
         aria-hidden="true"
       >
         <User className="w-[55%] h-[55%] text-white/60" strokeWidth={2.5} />
@@ -77,5 +59,12 @@ export function PlayerAvatar({
     );
   }
 
-  return <LetterFallback name={name} sizeClass={sizeClass} className={className} />;
+  return (
+    <span
+      className={`${circleClass} bg-gradient-to-br ${avatarGradientClass(name)} font-extrabold text-white leading-none`}
+      aria-hidden="true"
+    >
+      {initial}
+    </span>
+  );
 }

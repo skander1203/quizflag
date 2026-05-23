@@ -193,7 +193,7 @@ export function Quiz() {
       </header>
 
       {/* Zone drapeau ~40 % */}
-      <div className="shrink-0 px-4 mb-2">
+      <div className="shrink-0 px-4 mb-2 mt-7">
         <FlagDisplay
           isoCode={displayQuestion.country.iso_code}
           flagEmoji={displayQuestion.country.flag_emoji}

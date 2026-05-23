@@ -11,6 +11,7 @@ import { supabase } from '../lib/supabase';
 import {
   createProfile,
   fetchProfile,
+  buildAvatarUrl,
   isUsernameTaken,
   emailExists,
   uploadAvatar as uploadAvatarApi,
@@ -73,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadProfile = useCallback(async (userId: string) => {
     const profile = await fetchProfile(userId);
     setUsername(profile?.username ?? '');
-    setAvatarUrl(profile?.avatar_url ?? null);
+    setAvatarUrl(buildAvatarUrl(userId));
   }, []);
 
   useEffect(() => {
@@ -202,7 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (url) {
-        setAvatarUrl(url);
+        setAvatarUrl(buildAvatarUrl(userId));
       }
       return { error: null };
     },

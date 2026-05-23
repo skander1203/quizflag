@@ -90,7 +90,7 @@ export function UserMenu() {
           ) : isGuest ? (
             <User className="w-[55%] h-[55%] text-white/60" strokeWidth={2.5} />
           ) : (
-            <span className="text-sm font-extrabold text-white">{initial}</span>
+            <span className="font-extrabold text-white leading-none">{initial}</span>
           )}
         </span>
         <span
