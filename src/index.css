@@ -137,6 +137,13 @@
            hover:shadow-cyan-500/40 focus:outline-none focus:ring-2 focus:ring-cyan-400
            transition-shadow;
   }
+  .btn-gradient-indigo {
+    @apply inline-flex items-center justify-center font-extrabold text-white rounded-full
+           min-h-[48px] px-6 py-3 w-full max-w-full text-sm sm:text-base
+           bg-gradient-to-r from-[#6366f1] to-[#4f46e5] shadow-md shadow-indigo-500/25
+           hover:shadow-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-400
+           transition-shadow;
+  }
   .tap-target {
     @apply min-h-[48px] min-w-[48px];
   }

@@ -12,13 +12,17 @@ import {
 
 export function Results() {
   const navigate = useNavigate();
-  const { state, dispatch } = useQuiz();
+  const { state, dispatch, startGame } = useQuiz();
   const session = state.session;
   const savedToSupabaseRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!session?.finished) navigate('/');
-  }, [session, navigate]);
+    if (!session?.finished) {
+      navigate('/', { replace: true });
+    }
+    // Guard only on mount — avoid redirecting when buttons clear/restart the session.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!session?.finished) return;
@@ -82,29 +86,28 @@ export function Results() {
           className="btn-gradient-pink"
           whileTap={{ scale: 0.95 }}
           onClick={() => {
-            dispatch({ type: 'SET_DIFFICULTY', payload: session.difficulty });
-            dispatch({ type: 'START_GAME' });
-            navigate('/quiz');
+            startGame(session.difficulty);
+            navigate('/quiz', { replace: true });
           }}
         >
           Rejouer
         </motion.button>
         <button
           type="button"
-          className="glass-card border-white/25 text-white font-extrabold min-h-[48px] tap-target"
+          className="btn-gradient-indigo"
           onClick={() => {
             dispatch({ type: 'CLEAR_SESSION' });
-            navigate('/');
+            navigate('/', { replace: true });
           }}
         >
-          🏠 Menu
+          Aller au menu
         </button>
         <button
           type="button"
           className="btn-gradient-cyan"
           onClick={() => {
             dispatch({ type: 'CLEAR_SESSION' });
-            navigate('/difficulty');
+            navigate('/difficulty', { replace: true });
           }}
         >
           Changer la difficulté

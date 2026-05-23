@@ -4,6 +4,7 @@ import {
   useReducer,
   useEffect,
   useRef,
+  useCallback,
   type ReactNode,
   type Dispatch,
 } from 'react';
@@ -34,6 +35,7 @@ type Action =
   | { type: 'SET_DIFFICULTY'; payload: Difficulty }
   | { type: 'SET_PLAYER_NAME'; payload: string }
   | { type: 'START_GAME' }
+  | { type: 'RESTART_GAME'; payload: Difficulty }
   | {
       type: 'ANSWER';
       payload: { answer: string; elapsedMs: number };
@@ -64,6 +66,23 @@ function reducer(state: QuizState, action: Action): QuizState {
         session: {
           difficulty: state.difficulty,
           questions: generateFlagQuestions(state.difficulty, QUESTIONS_PER_GAME),
+          currentIndex: 0,
+          score: 0,
+          correctCount: 0,
+          wrongCount: 0,
+          speedBonuses: 0,
+          questionStartedAt: Date.now(),
+          finished: false,
+        },
+        feedback: null,
+      };
+    case 'RESTART_GAME':
+      return {
+        ...state,
+        difficulty: action.payload,
+        session: {
+          difficulty: action.payload,
+          questions: generateFlagQuestions(action.payload, QUESTIONS_PER_GAME),
           currentIndex: 0,
           score: 0,
           correctCount: 0,
@@ -120,6 +139,7 @@ const TIMER_ELAPSED_MAX = 10000;
 const QuizContext = createContext<{
   state: QuizState;
   dispatch: Dispatch<Action>;
+  startGame: (difficulty: Difficulty) => void;
 } | null>(null);
 
 export function QuizProvider({ children }: { children: ReactNode }) {
@@ -188,6 +208,10 @@ export function QuizProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'LOAD_LEADERBOARD', payload: next });
   }, [state.session?.finished]);
 
+  const startGame = useCallback((difficulty: Difficulty) => {
+    dispatch({ type: 'RESTART_GAME', payload: difficulty });
+  }, []);
+
   return (
     <QuizContext.Provider
       value={{
@@ -200,6 +224,7 @@ export function QuizProvider({ children }: { children: ReactNode }) {
           leaderboard,
         },
         dispatch,
+        startGame,
       }}
     >
       {children}
