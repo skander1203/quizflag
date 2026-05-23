@@ -259,6 +259,21 @@ export async function submitAnswer(
   });
 }
 
+export async function countAnswersForQuestion(
+  roomCode: string,
+  questionIndex: number,
+): Promise<number> {
+  const code = roomCode.toUpperCase();
+  const { data, error } = await supabase
+    .from('game_answers')
+    .select('player_name')
+    .eq('room_code', code)
+    .eq('question_index', questionIndex);
+
+  if (error) throw error;
+  return new Set((data ?? []).map((row) => row.player_name)).size;
+}
+
 export async function advanceQuestion(
   roomCode: string,
   currentIndex: number,
@@ -267,28 +282,56 @@ export async function advanceQuestion(
   const code = roomCode.toUpperCase();
   const nextIndex = currentIndex + 1;
 
+  console.log('[multiplayer] advanceQuestion', { code, currentIndex, nextIndex, totalQuestions });
+
   if (nextIndex >= totalQuestions) {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('game_rooms')
       .update({ status: 'finished' })
-      .eq('code', code);
+      .eq('code', code)
+      .eq('current_question', currentIndex)
+      .eq('status', 'playing')
+      .select()
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) {
+      throw new Error('Advance failed — room already finished or question changed');
+    }
+
+    await supabase.from('game_players').update({ answered: false }).eq('room_code', code);
     return;
   }
 
   const now = new Date().toISOString();
-  const { error: roomError } = await supabase
+  const { data, error: roomError } = await supabase
     .from('game_rooms')
     .update({
       current_question: nextIndex,
       start_time: now,
     })
-    .eq('code', code);
+    .eq('code', code)
+    .eq('current_question', currentIndex)
+    .eq('status', 'playing')
+    .select()
+    .maybeSingle();
 
   if (roomError) throw roomError;
+  if (!data) {
+    throw new Error('Advance failed — question already advanced');
+  }
 
-  await supabase.from('game_players').update({ answered: false }).eq('room_code', code);
+  const { error: playersError } = await supabase
+    .from('game_players')
+    .update({ answered: false })
+    .eq('room_code', code);
+
+  if (playersError) throw playersError;
+
+  console.log('[multiplayer] advanceQuestion success', {
+    code,
+    currentQuestion: data.current_question,
+  });
 }
 
 export interface RoomSubscriptionCallbacks {
@@ -339,6 +382,19 @@ export function subscribeToRoom(
           playerCount: players.length,
           players: players.map((p) => p.player_name),
         });
+        callbacks.onPlayersUpdate(players);
+      },
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'game_answers',
+        filter: `room_code=eq.${code}`,
+      },
+      async () => {
+        const players = await fetchPlayers(code);
         callbacks.onPlayersUpdate(players);
       },
     )

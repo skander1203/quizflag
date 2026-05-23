@@ -7,6 +7,7 @@ import { Timer } from '../components/Timer';
 import { Confetti } from '../components/Confetti';
 import {
   advanceQuestion,
+  countAnswersForQuestion,
   fetchPlayers,
   fetchRoom,
   submitAnswer,
@@ -62,6 +63,9 @@ export function MultiplayerQuiz() {
   const answeredIndexRef = useRef<number | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const questionStartedAtRef = useRef(Date.now());
+  const remainingRef = useRef(TIMER_SECONDS);
+  const playersRef = useRef<GamePlayer[]>([]);
+  const hostAdvanceIndexRef = useRef<number | null>(null);
 
   const questions = room?.questions ?? [];
   const currentIndex = room?.current_question ?? 0;
@@ -72,6 +76,9 @@ export function MultiplayerQuiz() {
   const timerExpired = remaining <= 0;
 
   const answeredCount = players.filter((p) => p.answered).length;
+
+  remainingRef.current = remaining;
+  playersRef.current = players;
 
   useEffect(() => {
     const mpSession = getMultiplayerSession();
@@ -137,8 +144,10 @@ export function MultiplayerQuiz() {
     setHasAnswered(false);
     setFeedback(null);
     setRemaining(TIMER_SECONDS);
+    remainingRef.current = TIMER_SECONDS;
     answeredIndexRef.current = null;
     advancingRef.current = false;
+    hostAdvanceIndexRef.current = null;
     questionStartedAtRef.current = Date.now();
     setPlayers((prev) => prev.map((p) => ({ ...p, answered: false })));
   }, [currentIndex]);
@@ -230,29 +239,70 @@ export function MultiplayerQuiz() {
 
   useEffect(() => {
     if (!isHost || !room || room.status !== 'playing') return;
-    if (advancingRef.current) return;
 
-    const allAnswered = players.length > 0 && players.every((p) => p.answered);
-    const everyoneAnsweredEarly = allAnswered && remaining < TIMER_SECONDS;
-    if (!everyoneAnsweredEarly && !timerExpired) return;
+    const tryAdvance = async () => {
+      const questionIndex = room.current_question;
+      if (advancingRef.current) return;
+      if (hostAdvanceIndexRef.current === questionIndex) return;
 
-    advancingRef.current = true;
-    const delay = everyoneAnsweredEarly && !timerExpired ? 1500 : 800;
-    const t = setTimeout(() => {
+      const playerCount = playersRef.current.length;
+      if (playerCount === 0) return;
+
+      const timerDone = remainingRef.current <= 0;
+      let answerCount = 0;
+
+      try {
+        answerCount = await countAnswersForQuestion(code, questionIndex);
+      } catch (err) {
+        console.log('[multiplayer] countAnswersForQuestion error', err);
+        return;
+      }
+
+      const allAnswered = answerCount >= playerCount;
+      if (!timerDone && !allAnswered) return;
+
+      advancingRef.current = true;
+      hostAdvanceIndexRef.current = questionIndex;
+
       console.log('[multiplayer] host advancing question', {
-        currentIndex,
+        questionIndex,
         total,
-        allAnswered: everyoneAnsweredEarly,
-        timerExpired,
+        timerDone,
+        allAnswered,
+        answerCount,
+        playerCount,
       });
-      void advanceQuestion(code, currentIndex, total).catch((err) => {
+
+      if (allAnswered && !timerDone) {
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+      } else if (timerDone) {
+        await new Promise((resolve) => setTimeout(resolve, 600));
+      }
+
+      try {
+        await advanceQuestion(code, questionIndex, total);
+        const updated = await fetchRoom(code);
+        if (updated) {
+          setRoom(updated);
+          if (updated.status === 'finished') {
+            navigate(`/multiplayer/results/${code}`, { replace: true });
+          }
+        }
+      } catch (err) {
         console.log('[multiplayer] advanceQuestion error', err);
         advancingRef.current = false;
-      });
-    }, delay);
+        hostAdvanceIndexRef.current = null;
+      }
+    };
 
-    return () => clearTimeout(t);
-  }, [isHost, room, players, timerExpired, code, currentIndex, total]);
+    const id = window.setInterval(() => {
+      void tryAdvance();
+    }, 500);
+
+    void tryAdvance();
+
+    return () => window.clearInterval(id);
+  }, [isHost, room?.status, room?.current_question, code, total, navigate]);
 
   if (!room || !question) {
     return (
