@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -17,13 +17,34 @@ import {
   getMultiplayerSession,
 } from '../lib/multiplayerSession';
 
-const PODIUM_HEIGHTS = [160, 120, 90] as const;
+const PODIUM_HEIGHT_BY_PLACE = {
+  1: 160,
+  2: 120,
+  3: 90,
+} as const;
+
 const PODIUM_COLORS = [
   'from-yellow-400 to-amber-600',
   'from-gray-300 to-gray-500',
   'from-amber-700 to-amber-900',
 ] as const;
-const PODIUM_ORDER = [1, 0, 2] as const;
+
+const PODIUM_MEDALS = ['🥇', '🥈', '🥉'] as const;
+
+/** Left = 2nd, center = 1st, right = 3rd — same on every client */
+const PODIUM_LAYOUT = [
+  { place: 2 as const, rankIndex: 1 },
+  { place: 1 as const, rankIndex: 0 },
+  { place: 3 as const, rankIndex: 2 },
+] as const;
+
+function sortPlayersByScore(list: GamePlayer[]): GamePlayer[] {
+  return [...list].sort((a, b) => {
+    const scoreDiff = Number(b.score) - Number(a.score);
+    if (scoreDiff !== 0) return scoreDiff;
+    return a.player_name.localeCompare(b.player_name);
+  });
+}
 
 export function MultiplayerResults() {
   const { code: codeParam } = useParams<{ code: string }>();
@@ -39,7 +60,7 @@ export function MultiplayerResults() {
   const playersSubRef = useRef<RealtimeChannel | null>(null);
 
   const sortPlayers = useCallback((list: GamePlayer[]) => {
-    setPlayers([...list].sort((a, b) => b.score - a.score));
+    setPlayers(sortPlayersByScore(list));
   }, []);
 
   useEffect(() => {
@@ -107,8 +128,9 @@ export function MultiplayerResults() {
     );
   }
 
-  const top3 = players.slice(0, 3);
-  const winner = players[0];
+  const rankedPlayers = useMemo(() => sortPlayersByScore(players), [players]);
+  const top3 = rankedPlayers.slice(0, 3);
+  const winner = rankedPlayers[0];
   const isWinner = winner?.player_name === playerName;
 
   const handleMenu = () => {
@@ -133,25 +155,29 @@ export function MultiplayerResults() {
 
       {top3.length > 0 && (
         <div className="flex items-end justify-center gap-3 px-2 mb-6 min-h-[220px]">
-          {PODIUM_ORDER.map((rankIndex) => {
+          {PODIUM_LAYOUT.map(({ place, rankIndex }) => {
             const player = top3[rankIndex];
-            if (!player) return <div key={rankIndex} className="w-24" />;
+            if (!player) {
+              return <div key={`podium-empty-${place}`} className="w-24 sm:w-28" />;
+            }
 
-            const isFirst = rankIndex === 0;
-            const medal = rankIndex === 0 ? '🥇' : rankIndex === 1 ? '🥈' : '🥉';
+            const height = PODIUM_HEIGHT_BY_PLACE[place];
+            const colorClass = PODIUM_COLORS[place - 1];
+            const medal = PODIUM_MEDALS[place - 1];
+            const isFirstPlace = place === 1;
 
             return (
               <div
-                key={player.id}
+                key={`podium-${place}-${player.id}`}
                 className="flex flex-col items-center w-24 sm:w-28"
               >
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + rankIndex * 0.15 }}
+                  transition={{ delay: 0.3 + (3 - place) * 0.05 }}
                   className="text-center mb-2 flex flex-col items-center"
                 >
-                  {isFirst && (
+                  {isFirstPlace && (
                     <span className="text-3xl block mb-1" aria-hidden="true">
                       👑
                     </span>
@@ -171,11 +197,11 @@ export function MultiplayerResults() {
                 </motion.div>
 
                 <motion.div
-                  className={`w-full rounded-t-2xl bg-gradient-to-t ${PODIUM_COLORS[rankIndex]} border-2 border-white/20 flex items-start justify-center pt-3 shadow-lg`}
+                  className={`w-full rounded-t-2xl bg-gradient-to-t ${colorClass} border-2 border-white/20 flex items-start justify-center pt-3 shadow-lg`}
                   initial={{ height: 0 }}
-                  animate={{ height: PODIUM_HEIGHTS[rankIndex] }}
+                  animate={{ height }}
                   transition={{
-                    delay: 0.5 + rankIndex * 0.2,
+                    delay: 0.5 + (3 - place) * 0.05,
                     type: 'spring',
                     stiffness: 200,
                     damping: 18,
@@ -194,7 +220,7 @@ export function MultiplayerResults() {
       <div className="glass-card p-4 mb-6">
         <h2 className="text-white/70 text-sm font-bold mb-3">Classement complet</h2>
         <ul className="space-y-2">
-          {players.map((player, i) => (
+          {rankedPlayers.map((player, i) => (
             <motion.li
               key={player.id}
               initial={{ opacity: 0, x: -16 }}
