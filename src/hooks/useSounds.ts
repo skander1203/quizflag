@@ -64,7 +64,11 @@ function playSweep(
   osc.type = type;
   osc.frequency.setValueAtTime(startFreq, now);
   osc.frequency.linearRampToValueAtTime(endFreq, now + duration);
-  gain.gain.setValueAtTime(volume, now);
+
+  const fadeOut = Math.min(0.1, duration * 0.25);
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(volume, now + 0.02);
+  gain.gain.setValueAtTime(volume, now + duration - fadeOut);
   gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
   osc.connect(gain);
@@ -111,12 +115,12 @@ export function useSounds() {
   }, []);
 
   const playCorrect = useCallback(() => {
-    playSweep(440, 880, 0.3, 'sine', 0.28);
+    playSweep(520, 620, 0.3, 'sine', 0.15);
     vibrate(50);
   }, []);
 
   const playWrong = useCallback(() => {
-    playSweep(300, 150, 0.3, 'sawtooth', 0.2);
+    playSweep(350, 250, 0.4, 'sine', 0.15);
     vibrate([100, 50, 100]);
   }, []);
 
