@@ -5,10 +5,10 @@
       <stop offset="100%" stop-color="#7c3aed"/>
     </linearGradient>
 
-    <radialGradient id="oceanShade" cx="36%" cy="36%" r="64%">
-      <stop offset="0%" stop-color="#1a6bb5"/>
-      <stop offset="52%" stop-color="#1a6bb5"/>
-      <stop offset="100%" stop-color="#0d4a8a"/>
+    <radialGradient id="oceanShade" cx="32%" cy="30%" r="68%" fx="28%" fy="26%">
+      <stop offset="0%" stop-color="#2a8ad4"/>
+      <stop offset="45%" stop-color="#1a6bb5"/>
+      <stop offset="100%" stop-color="#0a3d6b"/>
     </radialGradient>
 
     <clipPath id="iconClip">
@@ -23,43 +23,78 @@
   <g clip-path="url(#iconClip)">
     <rect width="512" height="512" fill="url(#bg)"/>
 
-    <!-- Globe ocean with 3D shading -->
     <circle cx="256" cy="268" r="168" fill="url(#oceanShade)"/>
 
     <g clip-path="url(#globeClip)">
-      <!-- North polar ice -->
-      <ellipse cx="256" cy="118" rx="72" ry="18" fill="#e8f4f8"/>
+      <!-- Deep ocean -->
+      <ellipse cx="208" cy="308" rx="36" ry="26" fill="#0d4a8a" opacity="0.55"/>
+      <ellipse cx="338" cy="218" rx="30" ry="22" fill="#0d4a8a" opacity="0.45"/>
+      <ellipse cx="292" cy="358" rx="26" ry="18" fill="#0d4a8a" opacity="0.4"/>
 
-      <!-- Greenland -->
-      <path fill="#e8f4f8" d="M162 122c14-10 34-8 44 4 10 12 6 28-6 36-12 8-30 6-38-6-8-12-4-26 0-34z"/>
-
-      <!-- North America -->
-      <path fill="#4a7c3f" d="M108 152c-6 16-4 36 6 52 10 16 12 34 8 52-4 18-14 34-12 52 2 18 16 28 28 22 12-6 16-24 12-42-4-18 0-38 10-54 10-16 8-34-4-48-12-14-32-18-48-14z"/>
-
-      <!-- South America -->
-      <path fill="#4a7c3f" d="M152 268c-8 14-10 32-4 48 6 16 18 28 28 24 10-4 12-20 8-36-4-16-2-34 6-48 8-14 10-32 2-46-8-14-24-20-40-16z"/>
-
-      <!-- Europe / Asia -->
-      <path fill="#4a7c3f" d="M286 128c18-8 40-4 54 12 14 16 18 38 12 58-6 20-22 36-42 42-20 6-42 0-54-18-12-18-12-42-2-60 10-18 28-32 50-32 14 0 26 10 28 24 2 14-8 26-22 30-14 4-30-2-36-16-6-14-2-30 10-38 12-8 28-6 36 6 8 12 4 26-8 34-12 8-26 6-36-4-10-10-14-24-10-36 4-12 18-18 30-14 12 4 20 16 18 28-2 12-14 20-26 18-12-2-20-14-18-26 2-12 14-20 26-18 12 2 18 14 14 26-4 12-18 18-30 14z"/>
-
-      <!-- Sahara -->
-      <path fill="#c4a35a" d="M262 210c14-6 32-4 44 8 12 12 14 30 6 44-8 14-26 22-42 18-16-4-28-20-26-36 2-16 14-30 30-34z"/>
-
-      <!-- Middle East -->
-      <path fill="#c4a35a" d="M318 232c10-2 20 4 24 14 4 10 0 22-10 28-10 6-24 4-30-6-6-10-2-24 8-32 4-2 6-4 8-4z"/>
-
-      <!-- Africa -->
-      <path fill="#4a7c3f" d="M274 184c-12 6-20 20-22 36-2 16 4 32 10 48 6 16 8 32 2 48-6 16-20 28-36 30-16 2-32-6-40-20-8-14-8-32-2-48 6-16 18-28 32-32 14-4 24-16 24-32 0-16-12-28-26-30-14-2-28 6-32 20-4 14 6 28 20 34 14 6 30 2 38-10 8-12 6-28-4-40-10-12-26-14-38-4z"/>
-
-      <!-- Australia -->
-      <path fill="#4a7c3f" d="M368 338c10-2 20 4 24 16 4 12-2 24-14 28-12 4-26-2-32-14-6-12 0-26 10-32 4-2 8-2 12-2z"/>
+      <!-- Wave texture -->
+      <g fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5">
+        <path d="M128 238c20-6 40-6 60 0s40 6 60 0"/>
+        <path d="M148 288c18-5 36-5 54 0s36 5 54 0"/>
+        <path d="M278 178c22-5 44-5 66 0s44 5 66 0"/>
+        <path d="M318 318c16-4 32-4 48 0s32 4 48 0"/>
+      </g>
 
       <!-- Antarctica -->
-      <path fill="#e8f4f8" d="M120 378c30 16 68 24 106 24s76-8 106-24c-20 18-58 28-106 28s-86-10-106-28z"/>
+      <path fill="#e8f4f8" d="M112 382c32 14 72 22 112 22s80-8 112-22c-22 16-62 26-112 26s-90-10-112-26z"/>
+
+      <!-- Greenland -->
+      <path fill="#e8f4f8" d="M156 116c14-12 34-12 46 0 12 12 10 30-4 38-14 8-34 6-44-6-10-12-6-28 2-32z"/>
+
+      <!-- North polar ice -->
+      <ellipse cx="252" cy="112" rx="66" ry="13" fill="#e8f4f8"/>
+
+      <!-- North America -->
+      <path fill="#4a7c3f" d="M100 146c-2 14 4 30 14 42 10 12 12 28 10 44-2 16-12 30-8 46 4 16 18 24 30 18 12-6 14-22 10-38-4-16 0-32 10-46 10-14 8-30 0-44-8-14-24-20-40-16-8 4-12 12-12 20 0 8 6 14 14 12 8-2 12-10 10-18-2-8-10-12-18-10-8 2-12 10-10 18 2 8 10 12 18 8 8-4 10-12 6-20-4-8-14-12-22-8z"/>
+      <path fill="#c4a35a" d="M116 168c8 10 12 24 10 38-2 14-12 26-10 40 2 14 14 20 24 14 10-6 10-18 8-30-2-12 4-24 12-32 8-8 6-18 0-26-6-8-18-10-28-4-8 6-12 16-10 26 2 10 12 16 22 10 10-6 10-18 4-28-6-10-16-14-26-8z"/>
+      <!-- Gulf of Mexico -->
+      <path fill="#1a6bb5" d="M146 246c8 6 18 8 26 4 8-4 10-14 4-20-6-6-18-6-26 0-8 6-6 12-4 16z"/>
+
+      <!-- Central America -->
+      <path fill="#4a7c3f" d="M154 288c-4 8-2 18 6 24 8 6 18 4 22-4 4-8 2-18-6-24-8-6-18-4-22 4z"/>
+
+      <!-- South America -->
+      <path fill="#4a7c3f" d="M162 298c-8 14-6 34 6 48 12 14 28 22 38 8 10 4 4 0-8-4-12-6-28 4-42 10-14 12-30 8-44-4-14-20-24-36-20-14 4-26 18-28 34-2 16 10 30 26 36 16 6 34 0 38-14 4-14-4-30-16-38-12-8-30-4-34 10z"/>
+      <path fill="#c4a35a" d="M164 316c-2 18 4 36 16 48 12 12 2 4-4-10-6-14-6-32 4-46 10-14 0-6-8-10-16-6-8 4-8 10-4 14z"/>
+
+      <!-- Europe -->
+      <path fill="#4a7c3f" d="M280 144c12-10 28-10 40 2 12 12 10 28-2 40-12 12-28 14-40 2-12-12-10-28 2-40 8-8 18-8 26 0 8 6 14 14 12 8-2 12-10 10-18-2-8-10-12-18-10-8 2-12 10-10 18 2 8 10 12 18 8 8-4 10-12 6-20z"/>
+
+      <!-- Asia -->
+      <path fill="#4a7c3f" d="M302 116c22-10 50-4 66 18 16 22 14 50 0 72-14 22-40 38-68 36-28-2-52-22-62-50-10-28-4-60 16-84 20-24 52-34 80-26 14 4 24 16 22 30-2 14-16 24-30 20-14-4-22-20-16-34 6-14 22-20 36-12 14 8 16 26 8 40-8 14-26 18-40 8-14-10-16-30-6-44 10-14 30-14 42 0 12 10 12 28 0 40-10 12-30 10-40 0-10-12-18-30-14z"/>
+
+      <!-- Indian subcontinent -->
+      <path fill="#4a7c3f" d="M328 242c8-4 18-2 22 8 4 10 0 20-10 26-10 6-22 4-28-6-6-10-2-22 8-28 4-2 6-2 8 0z"/>
+
+      <!-- Central Asia desert -->
+      <path fill="#c4a35a" d="M316 182c14-4 30-2 38 12 8 14 4 32-8 40-12 8-30 6-38-8-8-14-4-32 8-40 4-4 8-4 10-4z"/>
+
+      <!-- Middle East -->
+      <path fill="#c4a35a" d="M300 212c12-2 22 6 26 16 4 10 0 24-10 30-10 6-26 4-32-8-6-12-2-26 10-34 4-2 4-4 6-4z"/>
+
+      <!-- Africa -->
+      <path fill="#4a7c3f" d="M272 188c-12 4-22 18-24 34-2 16 6 32 12 48 6 16 8 32 4 48-4 16-18 28-34 32-16 4-34-2-44-18-10-16-10-36-4-54 6-18 20-32 36-36 16-4 28-18 26-34-2-16-16-28-32-28-16 0-30 12-32 28-2 16 12 28 28 32 16 4 34-2 40-18 6-16 0-34-14-46-14-12-32-14-44-2-12 12-14 30-6 44 8 14 26 20 40 12 14-8 18-26 12-42-6-16-24-26-40-22z"/>
+      <!-- Sahara -->
+      <path fill="#c4a35a" d="M260 196c16-4 36-2 48 12 12 14 14 34 6 50-8 16-28 26-46 22-18-4-32-24-30-44 2-20 18-36 38-40 4-1 8 0 12 0z"/>
+      <!-- Horn of Africa -->
+      <path fill="#4a7c3f" d="M314 264c8 6 12 16 10 26-2 10-12 18-22 16-10-2-16-12-14-22 2-10 12-18 22-16 2 0 4 0 4-4z"/>
+      <!-- Gulf of Guinea -->
+      <path fill="#1a6bb5" d="M248 288c8 6 18 6 26 0 8-6 8-16 0-22-8-6-20-6-28 0-8 6-6 16 2 22z"/>
+      <!-- Cape of Good Hope -->
+      <path fill="#4a7c3f" d="M264 354c6 8 16 10 24 4 8-6 8-16 2-22-6-6-18-6-24 2-6 8-4 14 2 16z"/>
+
+      <!-- Australia -->
+      <path fill="#c4a35a" d="M360 340c14-2 28 6 32 20 4 14-4 28-18 32-14 4-30-4-36-18-6-14 2-30 14-36 4-2 6-2 8-2z"/>
+      <path fill="#4a7c3f" d="M366 344c10-2 18 4 20 14 2 10-6 18-16 20-10 2-20-4-22-14-2-10 8-18 18-20z"/>
+      <path fill="#4a7c3f" d="M380 356c8-2 14 4 16 12 2 8-6 14-14 12-8-2-12-10-10-18 2-8 10-8 8-6z"/>
     </g>
 
-    <!-- Latitude / longitude lines -->
-    <g clip-path="url(#globeClip)" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="2.5">
+    <!-- Graticule -->
+    <g clip-path="url(#globeClip)" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="2">
       <ellipse cx="256" cy="268" rx="168" ry="42"/>
       <ellipse cx="256" cy="268" rx="168" ry="84"/>
       <ellipse cx="256" cy="268" rx="168" ry="126"/>
@@ -68,51 +103,69 @@
       <ellipse cx="256" cy="268" rx="126" ry="168"/>
     </g>
 
-    <!-- Globe rim -->
-    <circle cx="256" cy="268" r="168" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="3"/>
+    <circle cx="256" cy="268" r="168" fill="none" stroke="#ffffff" stroke-opacity="0.32" stroke-width="3"/>
 
-    <!-- Flag pins (3× larger than original: 48×30 flag, 42px pole) -->
+    <!-- Six flag pins (20×13) -->
     <g>
-      <!-- France — Europe -->
-      <g transform="translate(318, 168)">
-        <line x1="0" y1="0" x2="0" y2="42" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
-        <rect x="0" y="-30" width="48" height="30" rx="2" fill="#ffffff"/>
-        <rect x="0" y="-30" width="16" height="30" fill="#002395"/>
-        <rect x="32" y="-30" width="16" height="30" fill="#ed2939"/>
+      <!-- France -->
+      <g transform="translate(308, 160)">
+        <line x1="0" y1="0" x2="0" y2="18" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+        <rect x="0" y="-13" width="20" height="13" rx="1" fill="#ffffff"/>
+        <rect x="0" y="-13" width="7" height="13" fill="#002395"/>
+        <rect x="13" y="-13" width="7" height="13" fill="#ed2939"/>
       </g>
 
-      <!-- Brazil — South America -->
-      <g transform="translate(158, 302)">
-        <line x1="0" y1="0" x2="0" y2="42" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
-        <rect x="0" y="-30" width="48" height="30" rx="2" fill="#009c3b"/>
-        <polygon points="24,-24 38,-15 32,0 24,6 16,0 10,-15" fill="#ffdf00"/>
-        <circle cx="24" cy="-9" r="5" fill="#002776"/>
+      <!-- Brazil -->
+      <g transform="translate(170, 306)">
+        <line x1="0" y1="0" x2="0" y2="18" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+        <rect x="0" y="-13" width="20" height="13" rx="1" fill="#009739"/>
+        <polygon points="10,-11 16,-7 14,-2 10,0 6,-2 4,-7" fill="#fedd00"/>
+        <circle cx="10" cy="-5" r="2.5" fill="#002776"/>
       </g>
 
-      <!-- USA — North America -->
-      <g transform="translate(132, 188)">
-        <line x1="0" y1="0" x2="0" y2="42" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
-        <rect x="0" y="-30" width="48" height="30" rx="2" fill="#ffffff"/>
-        <rect x="0" y="-30" width="20" height="16" fill="#3c3b6e"/>
-        <rect x="0" y="-14" width="48" height="4" fill="#b22234"/>
-        <rect x="0" y="-6" width="48" height="4" fill="#b22234"/>
-        <rect x="0" y="2" width="48" height="4" fill="#b22234"/>
-        <rect x="0" y="-22" width="48" height="4" fill="#b22234"/>
+      <!-- USA -->
+      <g transform="translate(126, 180)">
+        <line x1="0" y1="0" x2="0" y2="18" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+        <rect x="0" y="-13" width="20" height="13" rx="1" fill="#ffffff"/>
+        <rect x="0" y="-13" width="8" height="7" fill="#3c3b6e"/>
+        <rect x="0" y="-6" width="20" height="2" fill="#b22234"/>
+        <rect x="0" y="-2" width="20" height="2" fill="#b22234"/>
+        <rect x="0" y="2" width="20" height="2" fill="#b22234"/>
+        <rect x="0" y="-10" width="20" height="2" fill="#b22234"/>
       </g>
 
-      <!-- Japan — Asia -->
-      <g transform="translate(392, 208)">
-        <line x1="0" y1="0" x2="0" y2="42" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
-        <rect x="0" y="-30" width="48" height="30" rx="2" fill="#ffffff" stroke="#d1d5db" stroke-width="0.5"/>
-        <circle cx="24" cy="-15" r="9" fill="#bc002d"/>
+      <!-- Japan -->
+      <g transform="translate(394, 200)">
+        <line x1="0" y1="0" x2="0" y2="18" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+        <rect x="0" y="-13" width="20" height="13" rx="1" fill="#ffffff" stroke="#e5e7eb" stroke-width="0.4"/>
+        <circle cx="10" cy="-6.5" r="4" fill="#bc002d"/>
       </g>
 
-      <!-- Nigeria — Africa -->
-      <g transform="translate(286, 268)">
-        <line x1="0" y1="0" x2="0" y2="42" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
-        <rect x="0" y="-30" width="48" height="30" rx="2" fill="#ffffff"/>
-        <rect x="0" y="-30" width="16" height="30" fill="#008751"/>
-        <rect x="32" y="-30" width="16" height="30" fill="#008751"/>
+      <!-- South Africa -->
+      <g transform="translate(280, 316)">
+        <line x1="0" y1="0" x2="0" y2="18" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+        <rect x="0" y="-13" width="20" height="13" rx="1" fill="#007749"/>
+        <polygon points="0,-13 8,-6.5 0,0" fill="#007749"/>
+        <rect x="8" y="-13" width="12" height="4" fill="#de3831"/>
+        <rect x="8" y="-5" width="12" height="3" fill="#ffb612"/>
+        <rect x="8" y="0" width="12" height="4" fill="#002395"/>
+        <line x1="0" y1="-13" x2="8" y2="-6.5" stroke="#ffffff" stroke-width="0.8"/>
+        <line x1="0" y1="0" x2="8" y2="-6.5" stroke="#ffffff" stroke-width="0.8"/>
+      </g>
+
+      <!-- Australia -->
+      <g transform="translate(376, 346)">
+        <line x1="0" y1="0" x2="0" y2="18" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+        <rect x="0" y="-13" width="20" height="13" rx="1" fill="#00008b"/>
+        <rect x="0" y="-13" width="9" height="7" fill="#012169"/>
+        <rect x="0" y="-10" width="9" height="1.2" fill="#ffffff"/>
+        <rect x="4" y="-13" width="1.2" height="7" fill="#ffffff"/>
+        <rect x="0" y="-9.4" width="9" height="0.6" fill="#c8102e"/>
+        <rect x="4.6" y="-13" width="0.6" height="7" fill="#c8102e"/>
+        <polygon points="10,-4 10.8,-2 12.6,-2 11.2,-0.8 11.6,1 10,0 8.4,1 8.8,-0.8 7.4,-2 9.2,-2" fill="#ffffff"/>
+        <circle cx="15" cy="-3" r="0.9" fill="#ffffff"/>
+        <circle cx="17" cy="-6" r="0.7" fill="#ffffff"/>
+        <circle cx="14" cy="-8" r="0.7" fill="#ffffff"/>
       </g>
     </g>
   </g>
