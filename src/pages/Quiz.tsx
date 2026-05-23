@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
+import { useAuth } from '../context/AuthContext';
 import { useTimer } from '../hooks/useTimer';
 import { useSounds } from '../hooks/useSounds';
 import { FlagDisplay } from '../components/FlagDisplay';
 import { Timer } from '../components/Timer';
 import { Confetti } from '../components/Confetti';
+import { reportFlag } from '../lib/flagReportsApi';
 import { getSpeedTier, remainingFromElapsed, TIMER_SECONDS } from '../utils/scoring';
 import type { FlagQuestion } from '../types';
 
@@ -37,12 +39,15 @@ function glowForPoints(points: number): string {
 export function Quiz() {
   const navigate = useNavigate();
   const { state, dispatch } = useQuiz();
+  const { user } = useAuth();
   const { playCorrect, playWrong, playTimerWarning, withClick } = useSounds();
   const session = state.session;
   const [locked, setLocked] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [answerSnapshot, setAnswerSnapshot] = useState<AnswerSnapshot | null>(null);
   const [floatingBonus, setFloatingBonus] = useState<FloatingBonus | null>(null);
+  const [reportToast, setReportToast] = useState(false);
+  const reportToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const question = session?.questions[session.currentIndex];
   const questionNum = session ? session.currentIndex + 1 : 0;
@@ -123,6 +128,25 @@ export function Quiz() {
     return () => clearTimeout(t);
   }, [state.feedback, dispatch]);
 
+  useEffect(() => {
+    return () => {
+      if (reportToastTimer.current) clearTimeout(reportToastTimer.current);
+    };
+  }, []);
+
+  const handleReportFlag = useCallback(() => {
+    const country = displayQuestion?.country;
+    if (!country) return;
+
+    setReportToast(true);
+    if (reportToastTimer.current) clearTimeout(reportToastTimer.current);
+    reportToastTimer.current = setTimeout(() => setReportToast(false), 2000);
+
+    void reportFlag(country.iso_code, country.name_fr, user?.id ?? null).catch(() => {
+      /* silent — toast already shown */
+    });
+  }, [displayQuestion?.country, user?.id]);
+
   if (!session || !displayQuestion) return null;
 
   const handleAnswer = (answer: string) => {
@@ -150,8 +174,32 @@ export function Quiz() {
         : null;
 
   return (
-    <div className="flex flex-col h-full min-h-0 -mx-4">
+    <div className="relative flex flex-col h-full min-h-0 -mx-4">
       <Confetti active={showConfetti} count={28} />
+
+      <AnimatePresence>
+        {reportToast && (
+          <motion.div
+            key="report-toast"
+            className="absolute bottom-14 right-4 z-30 px-3 py-1.5 rounded-lg glass-card border border-white/20 text-white/90 text-xs font-semibold pointer-events-none shadow-lg"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.2 }}
+          >
+            Drapeau signalé, merci!
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <button
+        type="button"
+        aria-label="Signaler le drapeau"
+        className="absolute bottom-3 right-3 z-20 w-6 h-6 flex items-center justify-center text-base leading-none opacity-50 hover:opacity-80 transition-opacity tap-target"
+        onClick={handleReportFlag}
+      >
+        🚩
+      </button>
 
       {/* En-tête fin */}
       <header className="shrink-0 px-4 py-2 bg-transparent">

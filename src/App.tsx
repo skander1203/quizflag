@@ -19,6 +19,7 @@ import { JoinGame } from './pages/JoinGame';
 import { WaitingRoom } from './pages/WaitingRoom';
 import { MultiplayerQuiz } from './pages/MultiplayerQuiz';
 import { MultiplayerResults } from './pages/MultiplayerResults';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
 
 function AuthLoading() {
   return (
@@ -84,6 +85,7 @@ function AppContent() {
             <Route path="/multiplayer/waiting/:code" element={<WaitingRoom />} />
             <Route path="/multiplayer/quiz/:code" element={<MultiplayerQuiz />} />
             <Route path="/multiplayer/results/:code" element={<MultiplayerResults />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
           </Routes>
         </Layout>
       </BrowserRouter>

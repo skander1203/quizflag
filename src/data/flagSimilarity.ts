@@ -3,52 +3,68 @@ import { getContinent } from './isoContinent';
 
 /**
  * Drapeaux visuellement proches (codes ISO minuscules).
- * Clé = pays correct ; valeurs = distracteurs plausibles.
+ * Clé = pays correct ; valeurs = distracteurs plausibles (ordre = similarité décroissante).
  */
-export const SIMILAR_FLAGS: Record<string, readonly string[]> = {
-  fr: ['nl', 'ru', 'hr', 'si', 'sk', 'lu', 'is', 'no', 'rs', 'cz'],
-  nl: ['fr', 'ru', 'hr', 'lu', 'rs', 'be', 'de'],
-  ru: ['fr', 'nl', 'hr', 'si', 'sk', 'rs', 'cz', 'lv', 'by', 'ua'],
-  it: ['mx', 'hu', 'bg', 'ir', 'ng', 'by', 'ci'],
-  mx: ['it', 'hu', 'bg', 'ir', 'ng', 'by'],
-  de: ['be', 'ye', 'ee', 'ao', 'at', 'nl'],
-  be: ['de', 'ye', 'ee', 'ao', 'nl', 'fr'],
-  ie: ['ci', 'ng', 'it', 'mx', 'gb'],
-  ro: ['td', 'bg', 'md', 'ad', 'hu'],
-  td: ['ro', 'bg', 'md', 'ad', 'ne'],
-  no: ['is', 'dk', 'fi', 'se', 'fr', 'nl', 'is'],
+export const flagSimilarity: Record<string, readonly string[]> = {
+  fr: ['nl', 'ru', 'hr', 'si', 'sk', 'lu', 'rs', 'cz'],
+  nl: ['fr', 'ru', 'hr', 'lu', 'rs', 'py'],
+  ru: ['fr', 'nl', 'hr', 'si', 'sk', 'rs', 'cz', 'lv', 'by'],
+  de: ['be', 'ye', 'ee', 'ao'],
+  be: ['de', 'ye', 'ee', 'ao'],
+  it: ['mx', 'hu', 'bg', 'ir', 'ng', 'by', 'ci', 'ie'],
+  mx: ['it', 'hu', 'bg', 'ir', 'ng', 'by', 'ci', 'ie'],
+  ie: ['it', 'mx', 'ci', 'ng'],
+  ci: ['ie', 'it', 'mx', 'ng'],
+  ng: ['it', 'mx', 'ie', 'ci'],
+  ro: ['td', 'bg', 'md', 'ad'],
+  td: ['ro', 'bg', 'md', 'ad'],
+  md: ['ro', 'td', 'bg', 'ad'],
+  no: ['is', 'dk', 'fi', 'se'],
   dk: ['no', 'se', 'fi', 'is', 'ch'],
-  se: ['no', 'dk', 'fi', 'is', 'ua'],
+  se: ['no', 'dk', 'fi', 'is'],
   fi: ['no', 'se', 'dk', 'is', 'ee'],
-  ch: ['dk', 'ge', 'gb', 'to', 'at'],
-  nz: ['au', 'fj', 'tv', 'ws'],
-  au: ['nz', 'fj', 'tv', 'gb', 'ws'],
-  in: ['ng', 'it', 'mx', 'ie', 'bd'],
-  ng: ['in', 'ie', 'it', 'mx', 'gh'],
-  cm: ['sn', 'ml', 'gn', 'gh'],
-  sn: ['ml', 'gn', 'cm', 'gh', 'ci'],
-  tz: ['ug', 'ke', 'rw', 'et'],
-  co: ['ve', 'ec', 'pe'],
-  ve: ['co', 'ec', 'pe'],
-  ec: ['co', 've', 'pe'],
+  ch: ['dk', 'ge', 'to'],
+  in: ['ng', 'it', 'ie', 'mx'],
+  au: ['nz', 'fj', 'tv', 'gb'],
+  nz: ['au', 'fj', 'tv', 'gb'],
   ar: ['uy', 'ni', 'gt', 'hn', 'sv'],
-  uy: ['ar', 'ni', 'gt', 'py'],
-  sa: ['ye', 'jo', 'ps', 'ae', 'iq'],
+  uy: ['ar', 'ni', 'gt'],
+  gr: ['cy', 'uy', 'fi'],
+  sa: ['ye', 'jo', 'ps', 'ae'],
   ye: ['sa', 'jo', 'ps', 'sy', 'de', 'be'],
   ae: ['kw', 'jo', 'ps', 'ye', 'sa'],
   kw: ['ae', 'sa', 'jo', 'ps'],
-  my: ['id', 'us', 'lr', 'sg'],
-  id: ['my', 'mc', 'pl', 'sg'],
-  mc: ['id', 'pl', 'sg', 'fr'],
-  pl: ['mc', 'id', 'sg', 'at', 'cz'],
-  jp: ['bd', 'tr', 'ge', 'la'],
-  bd: ['jp', 'tr', 'pk', 'in'],
-  tr: ['jp', 'bd', 'pk', 'dz'],
-  cn: ['kp', 'vn', 'la', 'kr'],
+  jo: ['sa', 'ye', 'ae', 'ps'],
+  my: ['us', 'lr', 'pr'],
+  us: ['my', 'lr', 'pr', 'ca'],
+  lr: ['my', 'us'],
+  jp: ['bd', 'tr', 'ge', 'pl'],
+  bd: ['jp', 'tr', 'ge', 'pl'],
+  cn: ['kp', 'vn', 'la'],
   kp: ['cn', 'vn', 'la', 'kr'],
-  kr: ['kp', 'cn', 'vn'],
-  ua: ['se', 'kz', 'pw', 'ba', 'ru'],
-  kz: ['ua', 'se', 'pw', 'ru'],
+  vn: ['cn', 'kp', 'la'],
+  ua: ['se', 'kz', 'pw', 'ba'],
+  kz: ['ua', 'se', 'pw'],
+  id: ['mc', 'pl', 'sg', 'my'],
+  mc: ['id', 'pl', 'sg'],
+  pl: ['mc', 'id', 'sg', 'at', 'pe'],
+  at: ['pl', 'pe', 'lv', 'ca'],
+  ca: ['at', 'pe', 'lv', 'us'],
+  pe: ['at', 'pl', 'ca', 'lv'],
+  lv: ['at', 'pe', 'ca', 'au'],
+  cm: ['sn', 'ml', 'gn', 'gh', 'et'],
+  sn: ['ml', 'gn', 'cm', 'gh'],
+  ml: ['sn', 'gn', 'cm', 'gh', 'et'],
+  gn: ['ml', 'sn', 'cm', 'gh'],
+  gh: ['ml', 'sn', 'gn', 'cm'],
+  et: ['ml', 'cm', 'gn', 'sn'],
+  co: ['ve', 'ec', 'pe'],
+  ve: ['co', 'ec', 'pe'],
+  ec: ['co', 've', 'pe'],
+  tr: ['jp', 'bd', 'pk', 'dz', 'az'],
+  pk: ['tr', 'bd', 'dz', 'az', 'tm'],
+  dz: ['tr', 'pk', 'az', 'tm'],
+  az: ['tr', 'pk', 'dz', 'tm'],
   hr: ['fr', 'nl', 'ru', 'si', 'sk', 'rs'],
   si: ['fr', 'nl', 'ru', 'hr', 'sk'],
   sk: ['fr', 'nl', 'ru', 'hr', 'si', 'cz'],
@@ -60,57 +76,37 @@ export const SIMILAR_FLAGS: Record<string, readonly string[]> = {
   bg: ['it', 'mx', 'hu', 'ro'],
   by: ['it', 'mx', 'ru', 'ua'],
   ir: ['it', 'mx', 'ng'],
-  ci: ['ie', 'ng', 'it', 'gh'],
-  ml: ['sn', 'gn', 'cm'],
-  gn: ['sn', 'ml', 'cm'],
-  gh: ['cm', 'sn', 'et', 'ng'],
+  kr: ['kp', 'cn', 'vn'],
+  gb: ['ie', 'au', 'nz', 'ch'],
+  br: ['ar', 'uy', 'py'],
+  es: ['pt', 'ad', 'mx'],
+  pt: ['es', 'br'],
+  cy: ['gr', 'tr', 'bg'],
+  ps: ['sa', 'ye', 'jo', 'ae'],
+  sy: ['ye', 'jo', 'iq', 'lb'],
+  lb: ['jo', 'il', 'sy'],
+  il: ['jo', 'ps', 'lb'],
+  iq: ['sa', 'sy', 'ir'],
+  eg: ['sa', 'ly', 'sd'],
+  za: ['na', 'bw', 'zw'],
+  tz: ['ug', 'ke', 'rw', 'et'],
   ug: ['tz', 'ke', 'rw'],
   ke: ['tz', 'ug', 'et'],
-  pe: ['co', 've', 'ec'],
+  rw: ['ug', 'tz', 'bi', 'ke'],
+  bi: ['rw', 'tz', 'ug'],
   ni: ['ar', 'uy', 'gt', 'hn'],
   gt: ['ar', 'uy', 'hn', 'sv'],
   hn: ['ar', 'gt', 'sv', 'ni'],
   sv: ['ar', 'gt', 'hn'],
-  jo: ['sa', 'ye', 'ps', 'ae'],
-  ps: ['sa', 'ye', 'jo', 'ae'],
-  sy: ['ye', 'jo', 'iq', 'lb'],
-  at: ['de', 'pl', 'ch', 'si'],
   ge: ['ch', 'am', 'az', 'tr'],
-  gb: ['ie', 'au', 'nz', 'ch'],
-  us: ['my', 'lr', 'ca', 'mx'],
-  lr: ['us', 'my'],
-  lv: ['ru', 'ee', 'lt'],
-  ee: ['fi', 'de', 'be', 'lv'],
-  ao: ['de', 'be', 'mz'],
-  md: ['ro', 'td', 'ua'],
-  ad: ['ro', 'td', 'es', 'fr'],
+  am: ['ge', 'az', 'tr'],
   ba: ['hr', 'rs', 'si', 'ua'],
   pw: ['ua', 'kz', 'mh'],
   la: ['cn', 'vn', 'kh', 'th'],
-  vn: ['cn', 'la', 'kh', 'th'],
-  pk: ['bd', 'tr', 'in', 'af'],
-  dz: ['tr', 'ma', 'tn'],
-  ma: ['dz', 'tn', 'es'],
-  eg: ['sa', 'ly', 'sd'],
-  za: ['na', 'bw', 'zw'],
-  br: ['ar', 'uy', 'py'],
-  es: ['pt', 'ad', 'mx'],
-  pt: ['es', 'br'],
-  gr: ['cy', 'tr', 'bg'],
-  ca: ['us', 'gb', 'fr'],
-  il: ['jo', 'ps', 'lb'],
-  lb: ['jo', 'il', 'sy'],
-  iq: ['sa', 'sy', 'ir'],
-  et: ['ke', 'tz', 'gh', 'ug'],
-  cd: ['cg', 'ao', 'tz'],
-  bo: ['pe', 'py', 'ar'],
-  py: ['ar', 'uy', 'bo'],
   th: ['la', 'vn', 'kh', 'my'],
   ph: ['my', 'id', 'sg'],
   sg: ['my', 'id', 'mc'],
   lk: ['in', 'bd', 'mv'],
-  am: ['ge', 'az', 'tr'],
-  az: ['ge', 'am', 'tr'],
   mn: ['kz', 'cn', 'ru'],
   af: ['pk', 'ir', 'tj'],
   kh: ['la', 'th', 'vn'],
@@ -122,14 +118,96 @@ export const SIMILAR_FLAGS: Record<string, readonly string[]> = {
   ws: ['fj', 'au', 'nz'],
   tv: ['au', 'nz', 'fj'],
   to: ['fj', 'ws', 'nz'],
-  rw: ['ug', 'tz', 'bi', 'ke'],
-  bi: ['rw', 'tz', 'ug'],
+  cd: ['cg', 'ao', 'tz'],
+  bo: ['pe', 'py', 'ar'],
+  py: ['ar', 'uy', 'bo', 'nl'],
+  ma: ['dz', 'tn', 'es'],
+  ee: ['fi', 'de', 'be', 'lv'],
+  ao: ['de', 'be', 'mz'],
+  ad: ['ro', 'td', 'es', 'fr'],
+  ne: ['td', 'ro', 'bf'],
+  bf: ['ne', 'td', 'ml'],
+  bj: ['ng', 'gh', 'tg'],
+  tg: ['gh', 'bj', 'sn'],
+  sl: ['lr', 'ng', 'gh'],
+  gm: ['sn', 'gw', 'lr'],
+  gw: ['gn', 'sn', 'gm'],
+  gq: ['gn', 'cm', 'ga'],
+  ga: ['gq', 'cm', 'cg'],
+  cg: ['cd', 'ga', 'ao'],
+  cf: ['td', 'ro', 'ne'],
+  mw: ['tz', 'zm', 'zw'],
+  ls: ['za', 'sz', 'bw'],
+  sz: ['za', 'ls', 'bw'],
+  na: ['za', 'bw', 'ao'],
+  bw: ['za', 'na', 'zw'],
+  zm: ['zw', 'mw', 'tz'],
+  zw: ['zm', 'za', 'bw'],
+  mz: ['ao', 'tz', 'za'],
+  mu: ['sc', 'mg', 'za'],
+  sc: ['mu', 'mg', 'km'],
+  km: ['mg', 'mu', 'tz'],
+  mg: ['km', 'mu', 'tz'],
+  mr: ['ma', 'dz', 'sn'],
+  dj: ['et', 'so', 'er'],
+  er: ['et', 'dj', 'sd'],
+  so: ['et', 'dj', 'ke'],
+  sd: ['eg', 'ly', 'et'],
+  ss: ['sd', 'ke', 'et'],
+  ly: ['eg', 'sd', 'tn'],
+  tn: ['dz', 'ma', 'ly'],
+  om: ['ae', 'ye', 'sa'],
+  qa: ['bh', 'ae', 'kw'],
+  bh: ['qa', 'kw', 'ae'],
+  tm: ['az', 'pk', 'tr'],
+  tj: ['af', 'uz', 'kg'],
+  kg: ['kz', 'uz', 'tj'],
+  uz: ['kz', 'tj', 'tm'],
+  xk: ['al', 'rs', 'mk'],
+  mk: ['xk', 'al', 'gr'],
+  al: ['xk', 'mk', 'me'],
+  me: ['rs', 'ba', 'al'],
+  mt: ['it', 'cy', 'gr'],
+  li: ['ch', 'at', 'de'],
+  sm: ['it', 'va', 'ch'],
+  va: ['it', 'sm', 'ch'],
+  bn: ['my', 'id', 'sg'],
+  tl: ['id', 'pg', 'au'],
+  pg: ['au', 'id', 'fj'],
+  sb: ['fj', 'vu', 'pg'],
+  vu: ['fj', 'sb', 'au'],
+  ht: ['do', 'cu', 'fr'],
+  do: ['ht', 'cu', 'pr'],
+  cu: ['do', 'ht', 'mx'],
+  cr: ['co', 'ni', 'hn'],
+  pa: ['co', 'cr', 've'],
+  jm: ['ht', 'tt', 'bs'],
+  tt: ['jm', 'ht', 'bb'],
+  bb: ['tt', 'jm', 'lc'],
+  bs: ['us', 'cu', 'jm'],
+  bz: ['gt', 'hn', 'sv'],
+  gy: ['sr', 've', 'br'],
+  sr: ['gy', 've', 'br'],
+  dm: ['lc', 'vc', 'gd'],
+  lc: ['vc', 'dm', 'gd'],
+  vc: ['lc', 'dm', 'gd'],
+  gd: ['vc', 'lc', 'dm'],
+  ag: ['kn', 'bb', 'tt'],
+  kn: ['ag', 'lc', 'bb'],
+  tw: ['cn', 'jp', 'kr'],
+  st: ['cv', 'gw', 'ao'],
+  cv: ['st', 'gw', 'pt'],
+  nr: ['au', 'fj', 'tv'],
+  ki: ['au', 'fj', 'tv'],
+  fm: ['mh', 'pw', 'pg'],
+  mh: ['fm', 'pw', 'us'],
+  pr: ['us', 'cu', 'do'],
 };
 
 /** Alias historiques / territoires → ISO du pool. */
 const ISO_ALIASES: Record<string, string> = {
-  'gb-eng': 'GB',
-  yu: 'RS',
+  'gb-eng': 'gb',
+  yu: 'rs',
 };
 
 function shuffle<T>(arr: T[]): T[] {
@@ -147,13 +225,19 @@ function findInPool(pool: Country[], isoLike: string): Country | undefined {
   return pool.find((c) => c.iso_code.toUpperCase() === target);
 }
 
-function getSimilarCandidates(correct: Country, pool: Country[]): Country[] {
+function getSimilarCandidates(
+  correct: Country,
+  pool: Country[],
+  shuffleResults: boolean,
+): Country[] {
   const key = correct.iso_code.toLowerCase();
-  const similarIsos = SIMILAR_FLAGS[key] ?? [];
+  const similarIsos = flagSimilarity[key] ?? [];
   const seen = new Set<string>([correct.iso_code.toUpperCase()]);
   const result: Country[] = [];
 
-  for (const iso of similarIsos) {
+  const ordered = shuffleResults ? shuffle([...similarIsos]) : similarIsos;
+
+  for (const iso of ordered) {
     const country = findInPool(pool, iso);
     if (country && !seen.has(country.iso_code.toUpperCase())) {
       result.push(country);
@@ -194,26 +278,27 @@ function fillSlots(
   pool: Country[],
   need: number,
 ): Country[] {
+  const working = [...picked];
   const exclude = new Set([
     correct.iso_code.toUpperCase(),
-    ...picked.map((c) => c.iso_code.toUpperCase()),
+    ...working.map((c) => c.iso_code.toUpperCase()),
   ]);
 
-  if (picked.length >= need) return picked.slice(0, need);
+  if (working.length >= need) return working.slice(0, need);
 
   const continentFill = shuffle(sameContinentCandidates(correct, pool, exclude));
   for (const c of continentFill) {
-    if (picked.length >= need) break;
-    picked.push(c);
+    if (working.length >= need) break;
+    working.push(c);
     exclude.add(c.iso_code.toUpperCase());
   }
 
-  if (picked.length >= need) return picked.slice(0, need);
+  if (working.length >= need) return working.slice(0, need);
 
-  const randomFill = randomFromPool(pool, exclude, need - picked.length);
-  picked.push(...randomFill);
+  const randomFill = randomFromPool(pool, exclude, need - working.length);
+  working.push(...randomFill);
 
-  return picked.slice(0, need);
+  return working.slice(0, need);
 }
 
 /**
@@ -224,21 +309,46 @@ export function pickSimilarWrongCountries(
   pool: Country[],
   difficulty: Difficulty,
 ): Country[] {
-  const similar = getSimilarCandidates(correct, pool);
-
   if (difficulty === 'facile') {
-    const fromSimilar = shuffle(similar).slice(0, Math.min(2, similar.length));
-    return fillSlots(fromSimilar, correct, pool, 3);
+    const similar = getSimilarCandidates(correct, pool, true);
+    const fromSimilar = similar.slice(0, Math.min(1, similar.length));
+    const sameTierPool = pool.filter(
+      (c) =>
+        c.difficulty === correct.difficulty &&
+        c.iso_code.toUpperCase() !== correct.iso_code.toUpperCase(),
+    );
+    const exclude = new Set([
+      correct.iso_code.toUpperCase(),
+      ...fromSimilar.map((c) => c.iso_code.toUpperCase()),
+    ]);
+    const randomFromTier = shuffle(
+      sameTierPool.filter((c) => !exclude.has(c.iso_code.toUpperCase())),
+    ).slice(0, 3 - fromSimilar.length);
+    return fillSlots([...fromSimilar, ...randomFromTier], correct, pool, 3);
   }
 
   if (difficulty === 'normal') {
-    const similarCount =
-      similar.length >= 3 ? 3 : similar.length >= 2 ? 2 : similar.length;
-    const fromSimilar = shuffle(similar).slice(0, similarCount);
+    const similar = getSimilarCandidates(correct, pool, true);
+    const fromSimilar = similar.slice(0, Math.min(2, similar.length));
     return fillSlots(fromSimilar, correct, pool, 3);
   }
 
-  // Difficile, Extrême, Impossible : 3 réponses depuis le groupe de similarité
-  const fromSimilar = shuffle(similar).slice(0, 3);
+  if (difficulty === 'difficile') {
+    const similar = getSimilarCandidates(correct, pool, true);
+    const target =
+      similar.length >= 3 ? 3 : similar.length >= 2 ? 2 + Math.round(Math.random()) : similar.length;
+    const fromSimilar = similar.slice(0, Math.min(target, similar.length));
+    return fillSlots(fromSimilar, correct, pool, 3);
+  }
+
+  if (difficulty === 'extreme') {
+    const similar = getSimilarCandidates(correct, pool, true);
+    const fromSimilar = similar.slice(0, 3);
+    return fillSlots(fromSimilar, correct, pool, 3);
+  }
+
+  // Impossible : 3 drapeaux très similaires (ordre de similarité préservé)
+  const similar = getSimilarCandidates(correct, pool, false);
+  const fromSimilar = similar.slice(0, 3);
   return fillSlots(fromSimilar, correct, pool, 3);
 }

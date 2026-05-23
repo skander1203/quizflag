@@ -11,9 +11,10 @@ const CREDITS_PANEL_EXIT = {
 interface CreditsModalProps {
   open: boolean;
   onClose: () => void;
+  onOpenPrivacy?: () => void;
 }
 
-export function CreditsModal({ open, onClose }: CreditsModalProps) {
+export function CreditsModal({ open, onClose, onOpenPrivacy }: CreditsModalProps) {
   const phoneScreen =
     typeof document !== 'undefined'
       ? document.querySelector<HTMLElement>('.phone-screen')
@@ -74,6 +75,16 @@ export function CreditsModal({ open, onClose }: CreditsModalProps) {
                 <p className="text-center text-white/50 text-xs font-semibold mt-3">
                   Tous droits réservés © 2025
                 </p>
+
+                {onOpenPrivacy && (
+                  <button
+                    type="button"
+                    className="block mx-auto mt-4 text-white/40 text-xs font-semibold underline underline-offset-2 hover:text-white/60 transition-colors"
+                    onClick={onOpenPrivacy}
+                  >
+                    Politique de confidentialité
+                  </button>
+                )}
 
                 <button
                   type="button"

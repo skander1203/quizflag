@@ -13,7 +13,14 @@ export function Home() {
 
   return (
     <div className="relative flex flex-col h-full min-h-0 overflow-hidden">
-      <CreditsModal open={creditsOpen} onClose={() => setCreditsOpen(false)} />
+      <CreditsModal
+        open={creditsOpen}
+        onClose={() => setCreditsOpen(false)}
+        onOpenPrivacy={withClick(() => {
+          setCreditsOpen(false);
+          navigate('/privacy');
+        })}
+      />
 
       <button
         type="button"
