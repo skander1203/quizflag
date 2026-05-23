@@ -5,7 +5,6 @@ import { useQuiz } from '../context/QuizContext';
 import { FlagParade } from '../components/FlagParade';
 import { NameModal } from '../components/NameModal';
 import { CreditsModal } from '../components/CreditsModal';
-import { getRank } from '../utils/ranks';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { STORAGE_PLAYER } from '../context/QuizContext';
 import type { PlayerData } from '../types';
@@ -16,9 +15,7 @@ export function Home() {
   const [creditsOpen, setCreditsOpen] = useState(false);
   const [, setStoredPlayer] = useLocalStorage<PlayerData>(STORAGE_PLAYER, {
     name: '',
-    totalCorrect: 0,
   });
-  const rank = getRank(state.player.totalCorrect);
 
   const play = () => {
     if (!state.player.name.trim()) {
@@ -29,7 +26,7 @@ export function Home() {
   };
 
   const handleName = (name: string) => {
-    setStoredPlayer({ name, totalCorrect: state.player.totalCorrect });
+    setStoredPlayer({ name });
     dispatch({ type: 'SET_PLAYER_NAME', payload: name });
     navigate('/difficulty');
   };
@@ -68,24 +65,6 @@ export function Home() {
 
         {/* -mx-4 sm:-mx-5 cancels Layout's px-4 sm:px-5 so the parade is edge-to-edge */}
         <FlagParade bleedClass="-mx-4 sm:-mx-5" />
-
-        <motion.div
-          className="glass-card flex items-center gap-3 px-4 py-3 mx-auto w-full shrink-0"
-          whileTap={{ scale: 0.98 }}
-        >
-          <span className="text-3xl sm:text-4xl" aria-hidden="true">
-            {rank.emoji}
-          </span>
-          <div className="flex-1 text-left min-w-0">
-            <p className="text-xs sm:text-sm text-white/50 font-semibold">Votre rang</p>
-            <p className="font-extrabold text-white text-sm sm:text-base truncate">
-              {rank.label}
-            </p>
-          </div>
-          <span className="text-white/50 text-xs sm:text-sm font-bold shrink-0">
-            {state.player.totalCorrect} ✓
-          </span>
-        </motion.div>
 
         <div className="flex-1 flex flex-col justify-center gap-4 shrink-0 py-2">
           <motion.button

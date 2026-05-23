@@ -145,7 +145,6 @@ const QuizContext = createContext<{
 export function QuizProvider({ children }: { children: ReactNode }) {
   const [player, setPlayer] = useLocalStorage<PlayerData>(STORAGE_PLAYER, {
     name: '',
-    totalCorrect: 0,
   });
   const [leaderboard, setLeaderboard] = useLocalStorage<LeaderboardEntry[]>(
     STORAGE_LEADERBOARD,
@@ -186,10 +185,8 @@ export function QuizProvider({ children }: { children: ReactNode }) {
     if (savedRef.current === key) return;
     savedRef.current = key;
 
-    const newTotalCorrect = player.totalCorrect + session.correctCount;
     setPlayer({
       name: state.player.name || player.name,
-      totalCorrect: newTotalCorrect,
     });
 
     const entry: LeaderboardEntry = {
@@ -219,7 +216,6 @@ export function QuizProvider({ children }: { children: ReactNode }) {
           ...state,
           player: {
             name: state.player.name || player.name,
-            totalCorrect: Math.max(state.player.totalCorrect, player.totalCorrect),
           },
           leaderboard,
         },

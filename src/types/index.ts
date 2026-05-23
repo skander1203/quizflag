@@ -39,14 +39,4 @@ export interface LeaderboardEntry {
 
 export interface PlayerData {
   name: string;
-  totalCorrect: number;
-}
-
-export type RankId = 'explorateur' | 'geographe' | 'maestro';
-
-export interface Rank {
-  id: RankId;
-  label: string;
-  emoji: string;
-  minCorrect: number;
 }
