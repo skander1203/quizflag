@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
 import { useAuth } from '../context/AuthContext';
 import { fetchTopLeaderboard } from '../lib/leaderboardApi';
-import { PlayerAvatar } from '../components/PlayerAvatar';
+import { avatarGradientClass } from '../utils/avatarColor';
 import type { Difficulty } from '../types';
 import { DIFFICULTY_LABELS } from '../utils/scoring';
 
@@ -207,11 +207,20 @@ export function Leaderboard() {
                 <span className="font-extrabold text-cyan-300 w-6 shrink-0">
                   {i + 1}
                 </span>
-                <PlayerAvatar
-                  name={entry.playerName}
-                  avatarUrl={entry.avatarUrl}
-                  size="xs"
-                />
+                {entry.avatarUrl ? (
+                  <img
+                    src={entry.avatarUrl}
+                    alt=""
+                    className="w-6 h-6 rounded-full object-cover shrink-0 border border-white/20"
+                  />
+                ) : (
+                  <div
+                    className={`w-6 h-6 rounded-full bg-gradient-to-br ${avatarGradientClass(entry.playerName)} flex items-center justify-center text-[10px] font-extrabold text-white shrink-0`}
+                    aria-hidden="true"
+                  >
+                    {entry.playerName.charAt(0).toUpperCase() || '?'}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-white text-sm truncate">
                     {entry.playerName}
