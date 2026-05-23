@@ -48,6 +48,7 @@ type AuthContextValue = {
   avatarUrl: string | null;
   isGuest: boolean;
   loading: boolean;
+  authRedirectTab: 'login' | 'register' | null;
   signUp: (
     email: string,
     password: string,
@@ -56,6 +57,8 @@ type AuthContextValue = {
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   continueAsGuest: () => void;
+  leaveGuestForAuth: (tab: 'login' | 'register') => void;
+  clearAuthRedirectTab: () => void;
   uploadAvatar: (file: File) => Promise<{ error: string | null }>;
   resetPassword: (email: string) => Promise<{ error: string | null; success: boolean }>;
 };
@@ -69,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isGuest, setIsGuest] = useState(
     () => sessionStorage.getItem(GUEST_STORAGE_KEY) === 'true',
   );
+  const [authRedirectTab, setAuthRedirectTab] = useState<'login' | 'register' | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadProfile = useCallback(async (userId: string) => {
@@ -190,6 +194,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAvatarUrl(null);
   }, []);
 
+  const leaveGuestForAuth = useCallback((tab: 'login' | 'register') => {
+    sessionStorage.removeItem(GUEST_STORAGE_KEY);
+    setIsGuest(false);
+    setUsername('');
+    setAvatarUrl(null);
+    setAuthRedirectTab(tab);
+  }, []);
+
+  const clearAuthRedirectTab = useCallback(() => {
+    setAuthRedirectTab(null);
+  }, []);
+
   const uploadAvatar = useCallback(
     async (file: File) => {
       const userId = session?.user?.id;
@@ -248,10 +264,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         avatarUrl: isGuest ? null : avatarUrl,
         isGuest,
         loading,
+        authRedirectTab,
         signUp,
         signIn,
         signOut,
         continueAsGuest,
+        leaveGuestForAuth,
+        clearAuthRedirectTab,
         uploadAvatar,
         resetPassword,
       }}

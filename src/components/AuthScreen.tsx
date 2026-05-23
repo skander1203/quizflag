@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -81,7 +81,14 @@ function PasswordField({
 }
 
 export function AuthScreen() {
-  const { signUp, signIn, resetPassword, continueAsGuest } = useAuth();
+  const {
+    signUp,
+    signIn,
+    resetPassword,
+    continueAsGuest,
+    authRedirectTab,
+    clearAuthRedirectTab,
+  } = useAuth();
   const [tab, setTab] = useState<Tab>('login');
   const [loginView, setLoginView] = useState<LoginView>('form');
   const [error, setError] = useState<string | null>(null);
@@ -96,6 +103,13 @@ export function AuthScreen() {
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  useEffect(() => {
+    if (!authRedirectTab) return;
+    setTab(authRedirectTab);
+    setLoginView('form');
+    clearAuthRedirectTab();
+  }, [authRedirectTab, clearAuthRedirectTab]);
 
   const clearMessages = () => {
     setError(null);

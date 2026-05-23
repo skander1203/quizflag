@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import { SplashScreen } from './components/SplashScreen';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { QuizProvider } from './context/QuizContext';
 import { Layout } from './components/Layout';
@@ -87,9 +90,16 @@ function AppContent() {
 }
 
 export default function App() {
+  const [splashDone, setSplashDone] = useState(false);
+
   return (
     <AuthProvider>
-      <AppContent />
+      <AnimatePresence>
+        {!splashDone && (
+          <SplashScreen key="splash" onComplete={() => setSplashDone(true)} />
+        )}
+      </AnimatePresence>
+      {splashDone && <AppContent />}
     </AuthProvider>
   );
 }

@@ -6,7 +6,7 @@ import { truncateUsername } from '../utils/username';
 import { avatarGradientClass } from '../utils/avatarColor';
 
 export function UserMenu() {
-  const { username, avatarUrl, isGuest, signOut, uploadAvatar } = useAuth();
+  const { username, avatarUrl, isGuest, signOut, uploadAvatar, leaveGuestForAuth } = useAuth();
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -15,7 +15,7 @@ export function UserMenu() {
 
   const displayName = truncateUsername(username);
   const initial = username.charAt(0).toUpperCase() || '?';
-  const showPhoto = Boolean(avatarUrl) && !imgError;
+  const showPhoto = Boolean(avatarUrl) && !imgError && !isGuest;
 
   useEffect(() => {
     setImgError(false);
@@ -37,6 +37,11 @@ export function UserMenu() {
   const handleSignOut = async () => {
     setOpen(false);
     await signOut();
+  };
+
+  const handleGuestAuth = (tab: 'login' | 'register') => {
+    setOpen(false);
+    leaveGuestForAuth(tab);
   };
 
   const handleChangePhoto = () => {
@@ -72,23 +77,23 @@ export function UserMenu() {
       >
         <span
           className={`relative z-0 w-8 h-8 rounded-full overflow-hidden shrink-0 border border-white/20 flex items-center justify-center ${
-            showPhoto
-              ? ''
-              : isGuest
-                ? 'bg-white/15'
+            isGuest
+              ? 'bg-white/15'
+              : showPhoto
+                ? ''
                 : `bg-gradient-to-br ${avatarGradientClass(username)}`
           }`}
           aria-hidden="true"
         >
-          {showPhoto ? (
+          {isGuest ? (
+            <User className="w-[55%] h-[55%] text-white/70" strokeWidth={2.5} />
+          ) : showPhoto ? (
             <img
               src={avatarUrl!}
               alt=""
               onError={() => setImgError(true)}
               className="w-full h-full object-cover rounded-[50%]"
             />
-          ) : isGuest ? (
-            <User className="w-[55%] h-[55%] text-white/60" strokeWidth={2.5} />
           ) : (
             <span className="font-extrabold text-white leading-none">{initial}</span>
           )}
@@ -108,29 +113,52 @@ export function UserMenu() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-48 z-30 border border-white/25 rounded-2xl overflow-hidden shadow-lg"
+            className={`absolute right-0 mt-2 z-30 border border-white/25 rounded-2xl overflow-hidden shadow-lg ${
+              isGuest ? 'w-52 p-3 space-y-2' : 'w-48'
+            }`}
             style={{ backgroundColor: '#2d1b4e' }}
             role="menu"
           >
-            {!isGuest && (
-              <button
-                type="button"
-                role="menuitem"
-                onClick={handleChangePhoto}
-                disabled={uploading}
-                className="w-full text-left px-4 py-3 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors disabled:opacity-50"
-              >
-                {uploading ? 'Téléversement…' : 'Changer la photo'}
-              </button>
+            {isGuest ? (
+              <>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => handleGuestAuth('register')}
+                  className="btn-gradient-pink w-full text-sm min-h-[44px] px-4 py-2.5"
+                >
+                  Créer un compte
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => handleGuestAuth('login')}
+                  className="w-full min-h-[44px] px-4 py-2.5 text-sm font-extrabold text-white rounded-full border-2 border-white/35 hover:bg-white/10 transition-colors"
+                >
+                  Se connecter
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={handleChangePhoto}
+                  disabled={uploading}
+                  className="w-full text-left px-4 py-3 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors disabled:opacity-50"
+                >
+                  {uploading ? 'Téléversement…' : 'Changer la photo'}
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => void handleSignOut()}
+                  className="w-full text-left px-4 py-3 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors"
+                >
+                  Se déconnecter
+                </button>
+              </>
             )}
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => void handleSignOut()}
-              className="w-full text-left px-4 py-3 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors"
-            >
-              Se déconnecter
-            </button>
           </motion.div>
         )}
       </AnimatePresence>

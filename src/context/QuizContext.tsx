@@ -22,9 +22,13 @@ import { useAuth } from '../context/AuthContext';
 const STORAGE_LEADERBOARD = 'quizflag_leaderboard';
 const MAX_LEADERBOARD = 10;
 
+export const QUESTION_COUNT_OPTIONS = [10, 20, 30, 50] as const;
+export type QuestionCount = (typeof QUESTION_COUNT_OPTIONS)[number];
+
 type QuizState = {
   player: PlayerData;
   difficulty: Difficulty;
+  questionCount: QuestionCount;
   session: GameSession | null;
   leaderboard: LeaderboardEntry[];
   feedback: 'idle' | 'correct' | 'wrong' | null;
@@ -32,6 +36,7 @@ type QuizState = {
 
 type Action =
   | { type: 'SET_DIFFICULTY'; payload: Difficulty }
+  | { type: 'SET_QUESTION_COUNT'; payload: QuestionCount }
   | { type: 'SET_PLAYER_NAME'; payload: string }
   | { type: 'START_GAME' }
   | { type: 'RESTART_GAME'; payload: Difficulty }
@@ -48,6 +53,8 @@ function reducer(state: QuizState, action: Action): QuizState {
   switch (action.type) {
     case 'SET_DIFFICULTY':
       return { ...state, difficulty: action.payload };
+    case 'SET_QUESTION_COUNT':
+      return { ...state, questionCount: action.payload };
     case 'SET_PLAYER_NAME':
       return {
         ...state,
@@ -60,7 +67,7 @@ function reducer(state: QuizState, action: Action): QuizState {
         ...state,
         session: {
           difficulty: state.difficulty,
-          questions: generateFlagQuestions(state.difficulty, QUESTIONS_PER_GAME),
+          questions: generateFlagQuestions(state.difficulty, state.questionCount),
           currentIndex: 0,
           score: 0,
           correctCount: 0,
@@ -71,13 +78,15 @@ function reducer(state: QuizState, action: Action): QuizState {
         },
         feedback: null,
       };
-    case 'RESTART_GAME':
+    case 'RESTART_GAME': {
+      const count = state.session?.questions.length ?? state.questionCount;
       return {
         ...state,
         difficulty: action.payload,
+        questionCount: count as QuestionCount,
         session: {
           difficulty: action.payload,
-          questions: generateFlagQuestions(action.payload, QUESTIONS_PER_GAME),
+          questions: generateFlagQuestions(action.payload, count),
           currentIndex: 0,
           score: 0,
           correctCount: 0,
@@ -88,6 +97,7 @@ function reducer(state: QuizState, action: Action): QuizState {
         },
         feedback: null,
       };
+    }
     case 'ANSWER':
     case 'TIMEOUT': {
       const session = state.session;
@@ -147,6 +157,7 @@ export function QuizProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, {
     player: { name: username },
     difficulty: 'facile',
+    questionCount: QUESTIONS_PER_GAME,
     session: null,
     leaderboard,
     feedback: null,
