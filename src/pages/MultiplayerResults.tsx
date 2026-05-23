@@ -17,7 +17,7 @@ import {
   getMultiplayerSession,
 } from '../lib/multiplayerSession';
 
-const PODIUM_HEIGHTS = [128, 176, 96] as const;
+const PODIUM_HEIGHTS = [160, 120, 90] as const;
 const PODIUM_COLORS = [
   'from-yellow-400 to-amber-600',
   'from-gray-300 to-gray-500',

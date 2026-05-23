@@ -283,12 +283,6 @@ export function MultiplayerQuiz() {
     advancingRef.current = true;
     hostAdvanceIndexRef.current = questionIndex;
 
-    if (allAnswered && !timerDone) {
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-    } else if (timerDone) {
-      await new Promise((resolve) => setTimeout(resolve, 600));
-    }
-
     try {
       await advanceQuestion(code, questionIndex, totalRef.current);
     } catch {
