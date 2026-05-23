@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
+import { useSounds } from '../hooks/useSounds';
 import { DIFFICULTY_OPTIONS } from '../utils/difficultyConfig';
 import { QUESTION_COUNT_OPTIONS, type QuestionCount } from '../context/QuizContext';
 import type { Difficulty } from '../types';
@@ -9,6 +10,7 @@ import type { Difficulty } from '../types';
 export function DifficultySelect() {
   const navigate = useNavigate();
   const { dispatch } = useQuiz();
+  const { withClick } = useSounds();
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | null>(null);
   const [questionCount, setQuestionCount] = useState<QuestionCount>(10);
 
@@ -25,7 +27,7 @@ export function DifficultySelect() {
       <div className="shrink-0 pb-3">
         <button
           type="button"
-          onClick={() => navigate('/')}
+          onClick={withClick(() => navigate('/'))}
           className="text-white/60 text-sm font-semibold min-h-[48px] px-1 tap-target"
         >
           ← Retour
@@ -52,7 +54,7 @@ export function DifficultySelect() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06, type: 'spring', stiffness: 300, damping: 24 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => setSelectedDifficulty(opt.id)}
+                onClick={withClick(() => setSelectedDifficulty(opt.id))}
                 className={`difficulty-card w-full text-left rounded-3xl p-5 min-h-[120px] bg-gradient-to-br ${opt.gradientClass} border-2 relative overflow-hidden tap-target ${
                   isSelected ? 'border-white/80 ring-2 ring-white/40' : 'border-white/25'
                 }`}
@@ -104,7 +106,7 @@ export function DifficultySelect() {
                       key={count}
                       type="button"
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => setQuestionCount(count)}
+                      onClick={withClick(() => setQuestionCount(count))}
                       className={`rounded-2xl py-3 text-base font-extrabold text-white tap-target transition-colors ${
                         isSelected
                           ? 'bg-gradient-to-r from-pink-500 to-purple-600 border-2 border-transparent shadow-md shadow-pink-500/25'
@@ -120,7 +122,7 @@ export function DifficultySelect() {
               <motion.button
                 type="button"
                 whileTap={{ scale: 0.97 }}
-                onClick={startGame}
+                onClick={withClick(startGame)}
                 className="btn-gradient-pink w-full"
               >
                 Commencer

@@ -3,10 +3,12 @@ import { motion } from 'framer-motion';
 import { FlagParade } from '../components/FlagParade';
 import { CreditsModal } from '../components/CreditsModal';
 import { UserMenu } from '../components/UserMenu';
+import { useSounds } from '../hooks/useSounds';
 import { useState } from 'react';
 
 export function Home() {
   const navigate = useNavigate();
+  const { enabled: soundsEnabled, toggleEnabled, playClick, withClick } = useSounds();
   const [creditsOpen, setCreditsOpen] = useState(false);
 
   return (
@@ -15,9 +17,20 @@ export function Home() {
 
       <button
         type="button"
+        className="absolute top-2 left-4 z-10 w-7 h-7 rounded-full glass-card border border-white/30 flex items-center justify-center text-xs shadow-md hover:border-cyan-400/50 transition-colors"
+        aria-label={soundsEnabled ? 'Couper le son' : 'Activer le son'}
+        onClick={toggleEnabled}
+      >
+        <span className="leading-none" aria-hidden="true">
+          {soundsEnabled ? '🔊' : '🔇'}
+        </span>
+      </button>
+
+      <button
+        type="button"
         className="absolute bottom-4 right-4 z-10 w-7 h-7 rounded-full glass-card border border-white/30 flex items-center justify-center text-xs shadow-md hover:border-cyan-400/50 transition-colors"
         aria-label="Crédits"
-        onClick={() => setCreditsOpen(true)}
+        onClick={withClick(() => setCreditsOpen(true))}
       >
         <span className="leading-none" aria-hidden="true">
           ℹ️
@@ -52,7 +65,7 @@ export function Home() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.94 }}
             transition={{ type: 'spring', stiffness: 500, damping: 15 }}
-            onClick={() => navigate('/difficulty')}
+            onClick={withClick(() => navigate('/difficulty'))}
           >
             Jouer
           </motion.button>
@@ -63,7 +76,7 @@ export function Home() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.94 }}
             transition={{ type: 'spring', stiffness: 500, damping: 15 }}
-            onClick={() => navigate('/multiplayer')}
+            onClick={withClick(() => navigate('/multiplayer'))}
           >
             Multijoueur
           </motion.button>
@@ -71,6 +84,7 @@ export function Home() {
 
         <Link
           to="/leaderboard"
+          onClick={() => playClick()}
           className="text-center text-cyan-300 font-bold text-sm sm:text-base py-3 tap-target shrink-0 hover:text-cyan-200"
         >
           Classement

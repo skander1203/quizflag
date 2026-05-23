@@ -1,15 +1,17 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useSounds } from '../hooks/useSounds';
 
 export function MultiplayerMenu() {
   const navigate = useNavigate();
+  const { withClick } = useSounds();
 
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className="shrink-0 pb-4">
         <button
           type="button"
-          onClick={() => navigate('/')}
+          onClick={withClick(() => navigate('/'))}
           className="text-white/60 text-sm font-semibold min-h-[48px] px-1 tap-target"
         >
           ← Retour
@@ -29,7 +31,7 @@ export function MultiplayerMenu() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.94 }}
           transition={{ type: 'spring', stiffness: 500, damping: 15 }}
-          onClick={() => navigate('/multiplayer/create')}
+          onClick={withClick(() => navigate('/multiplayer/create'))}
         >
           🎮 Créer une partie
         </motion.button>
@@ -40,7 +42,7 @@ export function MultiplayerMenu() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.94 }}
           transition={{ type: 'spring', stiffness: 500, damping: 15 }}
-          onClick={() => navigate('/multiplayer/join')}
+          onClick={withClick(() => navigate('/multiplayer/join'))}
         >
           🔗 Rejoindre une partie
         </motion.button>

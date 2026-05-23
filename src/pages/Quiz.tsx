@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
 import { useTimer } from '../hooks/useTimer';
+import { useSounds } from '../hooks/useSounds';
 import { FlagDisplay } from '../components/FlagDisplay';
 import { Timer } from '../components/Timer';
 import { Confetti } from '../components/Confetti';
@@ -36,6 +37,7 @@ function glowForPoints(points: number): string {
 export function Quiz() {
   const navigate = useNavigate();
   const { state, dispatch } = useQuiz();
+  const { playCorrect, playWrong, playTimerWarning, withClick } = useSounds();
   const session = state.session;
   const [locked, setLocked] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -98,10 +100,19 @@ export function Quiz() {
   useEffect(() => {
     if (state.feedback === 'correct') {
       setShowConfetti(true);
+      playCorrect();
       const t = setTimeout(() => setShowConfetti(false), 1500);
       return () => clearTimeout(t);
     }
-  }, [state.feedback]);
+    if (state.feedback === 'wrong') {
+      playWrong();
+    }
+  }, [state.feedback, playCorrect, playWrong]);
+
+  useEffect(() => {
+    if (!timerActive || remaining >= 3 || remaining <= 0) return;
+    playTimerWarning();
+  }, [remaining, timerActive, playTimerWarning]);
 
   useEffect(() => {
     if (!state.feedback) return;
@@ -179,10 +190,10 @@ export function Quiz() {
           <button
             type="button"
             className="text-white/50 text-xs font-semibold tap-target px-2"
-            onClick={() => {
+            onClick={withClick(() => {
               dispatch({ type: 'CLEAR_SESSION' });
               navigate('/');
-            }}
+            })}
           >
             Quitter
           </button>

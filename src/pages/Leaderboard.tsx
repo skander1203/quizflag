@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
 import { useAuth } from '../context/AuthContext';
+import { useSounds } from '../hooks/useSounds';
 import { fetchTopLeaderboard } from '../lib/leaderboardApi';
 import { PlayerAvatar } from '../components/PlayerAvatar';
 import type { Difficulty } from '../types';
@@ -63,6 +64,7 @@ function localEntries(
 export function Leaderboard() {
   const { isGuest } = useAuth();
   const { state } = useQuiz();
+  const { playClick, withClick } = useSounds();
   const playerName = state.player.name.trim();
   const [activeTabId, setActiveTabId] = useState<LeaderboardTabId>('global');
   const [entries, setEntries] = useState<DisplayEntry[]>([]);
@@ -144,7 +146,7 @@ export function Leaderboard() {
               type="button"
               role="tab"
               aria-selected={isActive}
-              onClick={() => setActiveTabId(tab.id)}
+              onClick={withClick(() => setActiveTabId(tab.id))}
               className={`shrink-0 px-4 py-2 rounded-full text-sm font-bold transition-colors whitespace-nowrap ${
                 isActive
                   ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/25'
@@ -161,7 +163,7 @@ export function Leaderboard() {
         <button
           type="button"
           className="text-sm font-bold text-cyan-300 hover:text-cyan-200 disabled:opacity-50 px-3 py-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/10"
-          onClick={() => loadLeaderboard(activeTab)}
+          onClick={withClick(() => void loadLeaderboard(activeTab))}
           disabled={loading}
           aria-label="Actualiser le classement"
         >
@@ -224,7 +226,7 @@ export function Leaderboard() {
         </ol>
       )}
 
-      <Link to="/" className="btn-gradient-cyan block text-center">
+      <Link to="/" onClick={() => playClick()} className="btn-gradient-cyan block text-center">
         Retour à l&apos;accueil
       </Link>
     </div>

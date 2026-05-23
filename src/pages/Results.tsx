@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
 import { useAuth } from '../context/AuthContext';
+import { useSounds } from '../hooks/useSounds';
 import { Confetti } from '../components/Confetti';
 import { saveBestScore } from '../lib/leaderboardApi';
 import {
@@ -15,8 +16,10 @@ export function Results() {
   const navigate = useNavigate();
   const { isGuest } = useAuth();
   const { state, dispatch, startGame } = useQuiz();
+  const { playVictory, withClick } = useSounds();
   const session = state.session;
   const savedToSupabaseRef = useRef<string | null>(null);
+  const victoryPlayedRef = useRef(false);
 
   useEffect(() => {
     if (!session?.finished) {
@@ -39,6 +42,12 @@ export function Results() {
       /* local leaderboard still updated via QuizContext */
     });
   }, [session, state.player.name]);
+
+  useEffect(() => {
+    if (!session?.finished || session.score <= 700 || victoryPlayedRef.current) return;
+    victoryPlayedRef.current = true;
+    playVictory();
+  }, [session, playVictory]);
 
   if (!session) return null;
 
@@ -87,30 +96,30 @@ export function Results() {
           type="button"
           className="btn-gradient-pink"
           whileTap={{ scale: 0.95 }}
-          onClick={() => {
+          onClick={withClick(() => {
             startGame(session.difficulty);
             navigate('/quiz', { replace: true });
-          }}
+          })}
         >
           Rejouer
         </motion.button>
         <button
           type="button"
           className="btn-gradient-indigo"
-          onClick={() => {
+          onClick={withClick(() => {
             dispatch({ type: 'CLEAR_SESSION' });
             navigate('/', { replace: true });
-          }}
+          })}
         >
           Aller au menu
         </button>
         <button
           type="button"
           className="btn-gradient-cyan"
-          onClick={() => {
+          onClick={withClick(() => {
             dispatch({ type: 'CLEAR_SESSION' });
             navigate('/difficulty', { replace: true });
-          }}
+          })}
         >
           Changer la difficulté
         </button>
