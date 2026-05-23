@@ -95,6 +95,33 @@ function playTone(freq: number, start: number, duration: number, volume = 0.22) 
   osc.stop(start + duration);
 }
 
+function playDrumRoll(durationSec = 1) {
+  const ctx = getAudioContext();
+  if (!ctx || !soundsEnabled) return;
+
+  const now = ctx.currentTime;
+  const tapCount = Math.max(8, Math.floor(durationSec * 14));
+
+  for (let i = 0; i < tapCount; i++) {
+    const t = now + (i / tapCount) * durationSec;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const vol = 0.04 + (i / tapCount) * 0.14;
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(160 + i * 10, t);
+
+    gain.gain.setValueAtTime(0.001, t);
+    gain.gain.exponentialRampToValueAtTime(vol, t + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.055);
+  }
+}
+
 export function useSounds() {
   const [enabled, setEnabledState] = useState(soundsEnabled);
 
@@ -153,6 +180,10 @@ export function useSounds() {
     });
   }, []);
 
+  const playDrumRollSuspense = useCallback((durationSec = 1) => {
+    playDrumRoll(durationSec);
+  }, []);
+
   const playClick = useCallback(() => {
     if (!soundsEnabled) return;
 
@@ -190,6 +221,7 @@ export function useSounds() {
     playWrong,
     playTimerWarning,
     playVictory,
+    playDrumRollSuspense,
     playClick,
     withClick,
   };
