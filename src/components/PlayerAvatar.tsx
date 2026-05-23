@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { User } from 'lucide-react';
-import { avatarGradientClass } from '../utils/avatarColor';
+import { getAvatarColor } from '../utils/avatarColor';
 
 type PlayerAvatarProps = {
   name: string;
@@ -61,7 +61,8 @@ export function PlayerAvatar({
 
   return (
     <span
-      className={`${circleClass} bg-gradient-to-br ${avatarGradientClass(name)} font-extrabold text-white leading-none`}
+      className={`${circleClass} font-extrabold text-white leading-none`}
+      style={{ backgroundColor: getAvatarColor(name) }}
       aria-hidden="true"
     >
       {initial}
