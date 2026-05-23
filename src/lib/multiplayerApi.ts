@@ -29,6 +29,8 @@ export interface GamePlayer {
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 
+export const MAX_PLAYERS_PER_ROOM = 10;
+
 export function generateRoomCode(): string {
   let code = '';
   for (let i = 0; i < 6; i++) {
@@ -110,6 +112,10 @@ export async function joinRoom(code: string, playerName: string): Promise<GameRo
   const existing = await fetchPlayers(code);
   if (existing.some((p) => p.player_name === playerName)) {
     return room;
+  }
+
+  if (existing.length >= MAX_PLAYERS_PER_ROOM) {
+    throw new Error('ROOM_FULL');
   }
 
   const { error } = await supabase.from('game_players').insert({

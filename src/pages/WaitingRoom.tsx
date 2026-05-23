@@ -5,6 +5,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import {
   fetchPlayers,
   fetchRoom,
+  MAX_PLAYERS_PER_ROOM,
   removeSubscription,
   startGame,
   subscribeToGamePlayers,
@@ -115,6 +116,8 @@ export function WaitingRoom() {
     navigate('/');
   };
 
+  const isFull = players.length >= MAX_PLAYERS_PER_ROOM;
+
   if (!room) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -153,8 +156,13 @@ export function WaitingRoom() {
 
         <div className="w-full glass-card p-4">
           <h2 className="text-white/70 text-sm font-bold mb-3">
-            Joueurs ({players.length})
+            {players.length}/{MAX_PLAYERS_PER_ROOM} joueurs
           </h2>
+          {isFull && (
+            <p className="text-amber-300 text-sm font-semibold mb-3 text-center" role="status">
+              La salle est complète ({MAX_PLAYERS_PER_ROOM}/{MAX_PLAYERS_PER_ROOM})
+            </p>
+          )}
           <ul className="space-y-2">
             {players.map((player, i) => (
               <motion.li

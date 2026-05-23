@@ -33,6 +33,8 @@ export function JoinGame() {
     } catch (err) {
       if (err instanceof Error && err.message === 'INVALID_CODE') {
         setError('Code invalide');
+      } else if (err instanceof Error && err.message === 'ROOM_FULL') {
+        setError('Cette partie est complète');
       } else {
         setError('Impossible de rejoindre la partie.');
       }
