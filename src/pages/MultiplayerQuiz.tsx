@@ -59,16 +59,18 @@ export function MultiplayerQuiz() {
   const [leaderboardOpen, setLeaderboardOpen] = useState(true);
   const advancingRef = useRef(false);
   const answeredIndexRef = useRef<number | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   const questions = room?.questions ?? [];
   const currentIndex = room?.current_question ?? 0;
   const question = questions[currentIndex] as FlagQuestion | undefined;
   const total = room?.question_count ?? questions.length;
   const myPlayer = players.find((p) => p.player_name === playerName);
-
-  const timerActive = Boolean(
-    room?.status === 'playing' && question && !locked && !feedback,
+  const canAnswer = Boolean(
+    room?.status === 'playing' && question && !locked && !feedback && !myPlayer?.answered,
   );
+
+  const timerActive = Boolean(canAnswer && room?.start_time);
 
   const { remaining, progress, expired } = useSyncedTimer(
     room?.start_time ?? null,
@@ -79,12 +81,11 @@ export function MultiplayerQuiz() {
   const answeredCount = players.filter((p) => p.answered).length;
 
   useEffect(() => {
-    if (!code || !session) {
+    const mpSession = getMultiplayerSession();
+    if (!code || !mpSession) {
       navigate('/multiplayer', { replace: true });
       return;
     }
-
-    let channel: RealtimeChannel | null = null;
 
     const init = async () => {
       const roomData = await fetchRoom(code);
@@ -92,6 +93,14 @@ export function MultiplayerQuiz() {
         navigate('/multiplayer', { replace: true });
         return;
       }
+
+      console.log('[multiplayer] quiz init', {
+        code,
+        status: roomData.status,
+        currentQuestion: roomData.current_question,
+        questionCount: roomData.questions?.length ?? 0,
+        startTime: roomData.start_time,
+      });
 
       if (roomData.status === 'waiting') {
         navigate(`/multiplayer/waiting/${code}`, { replace: true });
@@ -106,8 +115,14 @@ export function MultiplayerQuiz() {
       const playersData = await fetchPlayers(code);
       setPlayers(playersData);
 
-      channel = subscribeToRoom(code, {
+      channelRef.current = subscribeToRoom(code, {
         onRoomUpdate: (updated) => {
+          console.log('[multiplayer] quiz room update', {
+            code,
+            status: updated.status,
+            currentQuestion: updated.current_question,
+            startTime: updated.start_time,
+          });
           setRoom(updated);
           if (updated.status === 'finished') {
             navigate(`/multiplayer/results/${code}`, { replace: true });
@@ -120,17 +135,19 @@ export function MultiplayerQuiz() {
     void init();
 
     return () => {
-      if (channel) unsubscribeFromRoom(channel);
+      if (channelRef.current) {
+        unsubscribeFromRoom(channelRef.current);
+        channelRef.current = null;
+      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code, session, navigate]);
+  }, [code, navigate]);
 
   useEffect(() => {
     setLocked(false);
     setFeedback(null);
     answeredIndexRef.current = null;
     advancingRef.current = false;
-  }, [currentIndex, room?.start_time]);
+  }, [currentIndex]);
 
   useEffect(() => {
     if (feedback === 'correct') {
@@ -148,13 +165,29 @@ export function MultiplayerQuiz() {
 
   const doSubmit = useCallback(
     async (answer: string, elapsedMs: number) => {
-      if (!question || !room || answeredIndexRef.current === currentIndex) return;
+      if (!question || !room) {
+        console.log('[multiplayer] doSubmit blocked — missing question or room');
+        return;
+      }
+      if (answeredIndexRef.current === currentIndex) {
+        console.log('[multiplayer] doSubmit blocked — already answered question', currentIndex);
+        return;
+      }
 
       answeredIndexRef.current = currentIndex;
       const isCorrect = answer === question.correctAnswer;
       const points = pointsForAnswer(elapsedMs, isCorrect);
 
+      console.log('[multiplayer] doSubmit', {
+        answer,
+        currentIndex,
+        isCorrect,
+        points,
+        elapsedMs,
+      });
+
       setFeedback(isCorrect ? 'correct' : 'wrong');
+      setLocked(true);
       if (isCorrect) {
         const tier = getSpeedTier(remainingFromElapsed(elapsedMs));
         setFloatingBonus({
@@ -165,31 +198,56 @@ export function MultiplayerQuiz() {
         });
       }
 
+      setPlayers((prev) =>
+        prev.map((p) =>
+          p.player_name === playerName
+            ? { ...p, score: p.score + points, answered: true }
+            : p,
+        ),
+      );
+
       try {
         await submitAnswer(code, playerName, currentIndex, isCorrect, elapsedMs, points);
-      } catch {
-        /* realtime will sync scores */
+      } catch (err) {
+        console.log('[multiplayer] doSubmit error', err);
       }
     },
     [question, room, code, playerName, currentIndex],
   );
 
   const handleAnswer = (answer: string) => {
-    if (locked || feedback || !question || !room?.start_time) return;
-    setLocked(true);
-    const startMs = new Date(room.start_time).getTime();
-    const elapsedMs = Date.now() - startMs;
+    console.log('Answer clicked:', answer);
+    console.log('[multiplayer] handleAnswer state', {
+      locked,
+      feedback,
+      hasQuestion: Boolean(question),
+      currentIndex,
+      startTime: room?.start_time,
+      canAnswer,
+      alreadyAnswered: myPlayer?.answered,
+    });
+
+    if (locked || feedback || myPlayer?.answered) return;
+    if (!question || !room) return;
+
+    const startMs = room.start_time
+      ? new Date(room.start_time).getTime()
+      : Date.now();
+    const elapsedMs = room.start_time
+      ? Math.max(0, Date.now() - startMs)
+      : 0;
+
     void doSubmit(answer, elapsedMs);
   };
 
   useEffect(() => {
-    if (!expired || locked || feedback || !question || !room?.start_time) return;
+    if (!expired || locked || feedback || !question || myPlayer?.answered) return;
     if (answeredIndexRef.current === currentIndex) return;
 
-    setLocked(true);
+    console.log('[multiplayer] timer expired — auto submit', { currentIndex });
     const elapsedMs = TIMER_SECONDS * 1000;
     void doSubmit('', elapsedMs);
-  }, [expired, locked, feedback, question, room?.start_time, currentIndex, doSubmit]);
+  }, [expired, locked, feedback, question, myPlayer?.answered, currentIndex, doSubmit]);
 
   useEffect(() => {
     if (!isHost || !room || room.status !== 'playing') return;
@@ -364,10 +422,10 @@ export function MultiplayerQuiz() {
 
         <ul className="flex flex-col gap-2.5" role="listbox" aria-label="Réponses possibles">
           {question.options.map((opt) => (
-            <motion.li key={opt} role="option" whileTap={!locked ? { scale: 0.98 } : {}}>
+            <motion.li key={opt} role="option" whileTap={canAnswer ? { scale: 0.98 } : {}}>
               <button
                 type="button"
-                disabled={locked || !!feedback}
+                disabled={!canAnswer}
                 onClick={() => handleAnswer(opt)}
                 className={`answer-btn ${
                   feedback && opt === question.correctAnswer

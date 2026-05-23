@@ -200,6 +200,15 @@ export async function submitAnswer(
 ): Promise<void> {
   const code = roomCode.toUpperCase();
 
+  console.log('[multiplayer] submitAnswer', {
+    code,
+    playerName,
+    questionIndex,
+    isCorrect,
+    timeTaken,
+    points,
+  });
+
   const { error: answerError } = await supabase.from('game_answers').insert({
     room_code: code,
     player_name: playerName,
@@ -208,7 +217,10 @@ export async function submitAnswer(
     time_taken: timeTaken,
   });
 
-  if (answerError) throw answerError;
+  if (answerError) {
+    console.log('[multiplayer] submitAnswer insert error', answerError);
+    throw answerError;
+  }
 
   const { data: player, error: playerError } = await supabase
     .from('game_players')
@@ -217,8 +229,14 @@ export async function submitAnswer(
     .eq('player_name', playerName)
     .single();
 
-  if (playerError) throw playerError;
-  if (player?.answered) return;
+  if (playerError) {
+    console.log('[multiplayer] submitAnswer player fetch error', playerError);
+    throw playerError;
+  }
+  if (player?.answered) {
+    console.log('[multiplayer] submitAnswer skipped — already answered', { playerName, questionIndex });
+    return;
+  }
 
   const { error: updateError } = await supabase
     .from('game_players')
@@ -229,7 +247,16 @@ export async function submitAnswer(
     .eq('room_code', code)
     .eq('player_name', playerName);
 
-  if (updateError) throw updateError;
+  if (updateError) {
+    console.log('[multiplayer] submitAnswer score update error', updateError);
+    throw updateError;
+  }
+
+  console.log('[multiplayer] submitAnswer success', {
+    playerName,
+    newScore: (player?.score ?? 0) + points,
+    questionIndex,
+  });
 }
 
 export async function advanceQuestion(
@@ -331,16 +358,29 @@ export function unsubscribeFromRoom(channel: RealtimeChannel): void {
   supabase.removeChannel(channel);
 }
 
+function parseQuestions(raw: unknown): FlagQuestion[] | null {
+  if (!raw) return null;
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      return Array.isArray(parsed) ? (parsed as FlagQuestion[]) : null;
+    } catch {
+      return null;
+    }
+  }
+  return Array.isArray(raw) ? (raw as FlagQuestion[]) : null;
+}
+
 function normalizeRoom(row: Record<string, unknown>): GameRoom {
   return {
     id: row.id as string,
     code: row.code as string,
     host_name: row.host_name as string,
     difficulty: row.difficulty as Difficulty,
-    question_count: row.question_count as number,
+    question_count: Number(row.question_count) || 0,
     status: row.status as GameRoomStatus,
-    questions: row.questions as FlagQuestion[] | null,
-    current_question: (row.current_question as number) ?? 0,
+    questions: parseQuestions(row.questions),
+    current_question: Number(row.current_question) || 0,
     start_time: (row.start_time as string | null) ?? null,
     created_at: row.created_at as string,
   };
