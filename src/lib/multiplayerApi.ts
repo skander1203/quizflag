@@ -276,6 +276,52 @@ export async function advanceQuestion(
   await supabase.from('game_players').update({ answered: false }).eq('room_code', code);
 }
 
+export async function replayGame(roomCode: string): Promise<void> {
+  const code = roomCode.toUpperCase();
+  const room = await fetchRoom(code);
+
+  if (!room) {
+    throw new Error('Partie introuvable');
+  }
+  if (room.status !== 'finished') {
+    throw new Error('La partie n\'est pas terminée');
+  }
+
+  const questions = generateFlagQuestions(room.difficulty, room.question_count);
+
+  const { error: answersError } = await supabase
+    .from('game_answers')
+    .delete()
+    .eq('room_code', code);
+
+  if (answersError) throw answersError;
+
+  const { error: playersError } = await supabase
+    .from('game_players')
+    .update({ score: 0, answered: false })
+    .eq('room_code', code);
+
+  if (playersError) throw playersError;
+
+  const { data, error: roomError } = await supabase
+    .from('game_rooms')
+    .update({
+      status: 'waiting',
+      current_question: 0,
+      start_time: null,
+      questions,
+    })
+    .eq('code', code)
+    .eq('status', 'finished')
+    .select()
+    .maybeSingle();
+
+  if (roomError) throw roomError;
+  if (!data) {
+    throw new Error('Impossible de relancer la partie');
+  }
+}
+
 export function subscribeToGameRoom(
   roomCode: string,
   onRoomChange: (room: GameRoom) => void,

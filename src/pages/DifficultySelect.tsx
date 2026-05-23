@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
 import { useSounds } from '../hooks/useSounds';
 import { DIFFICULTY_OPTIONS } from '../utils/difficultyConfig';
-import { QUESTION_COUNT_OPTIONS, type QuestionCount } from '../context/QuizContext';
 import type { Difficulty } from '../types';
 
 export function DifficultySelect() {
@@ -12,12 +11,10 @@ export function DifficultySelect() {
   const { dispatch } = useQuiz();
   const { withClick } = useSounds();
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | null>(null);
-  const [questionCount, setQuestionCount] = useState<QuestionCount>(10);
 
   const startGame = () => {
     if (!selectedDifficulty) return;
     dispatch({ type: 'SET_DIFFICULTY', payload: selectedDifficulty });
-    dispatch({ type: 'SET_QUESTION_COUNT', payload: questionCount });
     dispatch({ type: 'START_GAME' });
     navigate('/quiz');
   };
@@ -37,7 +34,7 @@ export function DifficultySelect() {
         </h1>
         <p className="text-white/60 text-sm sm:text-base text-center mt-1">
           {selectedDifficulty
-            ? 'Choisissez le nombre de questions'
+            ? '10 questions — prêt à jouer ?'
             : 'Touchez une carte pour continuer'}
         </p>
       </div>
@@ -87,38 +84,13 @@ export function DifficultySelect() {
         <AnimatePresence>
           {selectedDifficulty && (
             <motion.li
-              key="question-count"
+              key="start"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
               transition={{ type: 'spring', stiffness: 300, damping: 24 }}
               className="pt-2"
             >
-              <h2 className="text-lg font-extrabold text-white text-center mb-3">
-                Nombre de questions
-              </h2>
-              <div className="grid grid-cols-4 gap-2 mb-4">
-                {QUESTION_COUNT_OPTIONS.map((count) => {
-                  const isSelected = questionCount === count;
-
-                  return (
-                    <motion.button
-                      key={count}
-                      type="button"
-                      whileTap={{ scale: 0.95 }}
-                      onClick={withClick(() => setQuestionCount(count))}
-                      className={`rounded-2xl py-3 text-base font-extrabold text-white tap-target transition-colors ${
-                        isSelected
-                          ? 'bg-gradient-to-r from-pink-500 to-purple-600 border-2 border-transparent shadow-md shadow-pink-500/25'
-                          : 'bg-transparent border-2 border-white/25 hover:border-white/40'
-                      }`}
-                      aria-pressed={isSelected}
-                    >
-                      {count}
-                    </motion.button>
-                  );
-                })}
-              </div>
               <motion.button
                 type="button"
                 whileTap={{ scale: 0.97 }}

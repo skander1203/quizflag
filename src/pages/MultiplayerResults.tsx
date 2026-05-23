@@ -9,6 +9,7 @@ import {
   fetchPlayers,
   fetchRoom,
   removeSubscription,
+  replayGame,
   subscribeToGamePlayers,
   subscribeToGameRoom,
   type GamePlayer,
@@ -43,11 +44,13 @@ export function MultiplayerResults() {
   const session = getMultiplayerSession();
   const code = (codeParam ?? session?.roomCode ?? '').toUpperCase();
   const playerName = session?.playerName ?? '';
+  const isHost = session?.isHost ?? false;
   const { playVictory } = useSounds();
 
   const [players, setPlayers] = useState<GamePlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [replaying, setReplaying] = useState(false);
 
   const roomSubRef = useRef<RealtimeChannel | null>(null);
   const playersSubRef = useRef<RealtimeChannel | null>(null);
@@ -138,6 +141,18 @@ export function MultiplayerResults() {
   const handleMenu = () => {
     clearMultiplayerSession();
     navigate('/');
+  };
+
+  const handleReplay = async () => {
+    if (!isHost || replaying) return;
+    setReplaying(true);
+    setError(null);
+    try {
+      await replayGame(code);
+    } catch {
+      setError('Impossible de relancer la partie.');
+      setReplaying(false);
+    }
   };
 
   if (loading) {
@@ -286,17 +301,40 @@ export function MultiplayerResults() {
         </ul>
       </section>
 
-      <motion.button
-        type="button"
-        className="btn-gradient-pink w-full shrink-0"
-        whileTap={{ scale: 0.95 }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.9 }}
-        onClick={handleMenu}
-      >
-        Retour au menu
-      </motion.button>
+      {error && (
+        <p className="text-red-400 text-sm font-semibold text-center mb-4" role="alert">
+          {error}
+        </p>
+      )}
+
+      <div className="flex flex-col gap-3 shrink-0">
+        {isHost && (
+          <motion.button
+            type="button"
+            className="btn-gradient-cyan w-full"
+            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.9 }}
+            disabled={replaying}
+            onClick={() => void handleReplay()}
+          >
+            {replaying ? 'Relance…' : '🔄 Rejouer une partie'}
+          </motion.button>
+        )}
+
+        <motion.button
+          type="button"
+          className="btn-gradient-pink w-full"
+          whileTap={{ scale: 0.95 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: isHost ? 1 : 0.9 }}
+          onClick={handleMenu}
+        >
+          🏠 Retour au menu
+        </motion.button>
+      </div>
     </div>
   );
 }
