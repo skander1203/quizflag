@@ -20,6 +20,17 @@ interface FloatingBonus {
   id: number;
   label: string;
   color: string;
+  textShadow: string;
+}
+
+function glowForPoints(points: number): string {
+  if (points === 150) {
+    return '0 0 10px rgba(251, 191, 36, 0.9), 0 0 22px rgba(251, 191, 36, 0.5)';
+  }
+  if (points === 120) {
+    return '0 0 8px rgba(250, 204, 21, 0.75), 0 0 18px rgba(250, 204, 21, 0.4)';
+  }
+  return '0 0 8px rgba(74, 222, 128, 0.75), 0 0 18px rgba(74, 222, 128, 0.4)';
 }
 
 export function Quiz() {
@@ -110,7 +121,12 @@ export function Quiz() {
     const elapsedMs = Date.now() - session.questionStartedAt;
     if (answer === question.correctAnswer) {
       const tier = getSpeedTier(remainingFromElapsed(elapsedMs));
-      setFloatingBonus({ id: Date.now(), label: tier.label, color: tier.color });
+      setFloatingBonus({
+        id: Date.now(),
+        label: tier.label,
+        color: tier.color,
+        textShadow: glowForPoints(tier.points),
+      });
     }
     dispatch({ type: 'ANSWER', payload: { answer, elapsedMs } });
   };
@@ -127,7 +143,7 @@ export function Quiz() {
       <Confetti active={showConfetti} count={28} />
 
       {/* En-tête fin */}
-      <header className="shrink-0 px-4 py-2 border-b border-white/10 bg-[#1a0533]/90 backdrop-blur-sm">
+      <header className="shrink-0 px-4 py-2 bg-transparent">
         <div className="flex items-center justify-between gap-2 min-h-[40px]">
           <div className="relative">
             <span className="text-cyan-300 font-extrabold tabular-nums text-sm">
@@ -137,12 +153,19 @@ export function Quiz() {
               {floatingBonus && (
                 <motion.span
                   key={floatingBonus.id}
-                  className="absolute left-0 top-0 text-2xl font-bold pointer-events-none whitespace-nowrap"
-                  style={{ color: floatingBonus.color }}
-                  initial={{ opacity: 1, y: 0 }}
-                  animate={{ opacity: 0, y: -60 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 1.2, ease: 'easeOut' }}
+                  className="absolute left-0 top-0 text-3xl font-black pointer-events-none whitespace-nowrap"
+                  style={{
+                    color: floatingBonus.color,
+                    textShadow: floatingBonus.textShadow,
+                  }}
+                  initial={{ scale: 1.5, opacity: 1, y: 0 }}
+                  animate={{
+                    scale: [1.5, 1, 1],
+                    opacity: [1, 1, 0],
+                    y: [0, -20, -60],
+                  }}
+                  exit={{ opacity: 0, y: -60 }}
+                  transition={{ duration: 1.5, ease: 'easeOut' }}
                   onAnimationComplete={() => setFloatingBonus(null)}
                 >
                   {floatingBonus.label}
@@ -170,7 +193,7 @@ export function Quiz() {
       </header>
 
       {/* Zone drapeau ~40 % */}
-      <div className="shrink-0 px-4">
+      <div className="shrink-0 px-4 mb-2">
         <FlagDisplay
           isoCode={displayQuestion.country.iso_code}
           flagEmoji={displayQuestion.country.flag_emoji}
@@ -181,7 +204,7 @@ export function Quiz() {
 
       {/* Question + réponses */}
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 pb-4 flex flex-col gap-3">
-        <p className="text-center text-white font-extrabold text-base sm:text-lg shrink-0 px-1">
+        <p className="text-center text-white font-extrabold text-base sm:text-lg shrink-0 px-1 mt-2">
           🏳️ À quel pays appartient ce drapeau ?
         </p>
 
