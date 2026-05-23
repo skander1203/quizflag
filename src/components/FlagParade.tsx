@@ -48,7 +48,7 @@ export function FlagParade({ compact = false, bleedClass = '' }: FlagParadeProps
         {row.map((item, i) => (
           <div
             key={`${item.iso}-${i}`}
-            className="flag-parade-slot shrink-0 mr-3 sm:mr-4 w-14 h-10 sm:w-16 sm:h-11 rounded-xl overflow-hidden shadow-lg border border-white/10"
+            className="flag-parade-slot shrink-0 mr-3 sm:mr-4 w-14 h-10 sm:w-16 sm:h-11 rounded-lg overflow-hidden"
           >
             <FlagImage
               isoCode={item.iso}
@@ -58,7 +58,7 @@ export function FlagParade({ compact = false, bleedClass = '' }: FlagParadeProps
               loading="eager"
               hideOnError
               className="w-full h-full bg-[#1a0533]"
-              imgClassName="w-full h-full object-cover"
+              imgClassName="w-full h-full object-cover rounded-lg shadow-none outline-none border-0"
               skeletonClassName="w-full h-full min-h-[40px]"
             />
           </div>

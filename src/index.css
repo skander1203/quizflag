@@ -7,18 +7,21 @@
 }
 
 @layer base {
+  html,
+  body,
+  #root {
+    background-color: #1a0533 !important;
+  }
   html {
     font-family: var(--font-sans);
     scroll-behavior: smooth;
     overflow-x: hidden;
-    background-color: #1a0533;
     min-height: 100%;
   }
   body {
     margin: 0;
     color: white;
     overflow-x: hidden;
-    background-color: #1a0533;
     padding-top: env(safe-area-inset-top);
     min-height: 100%;
   }
@@ -93,6 +96,12 @@
   }
   .flag-parade-slot {
     background-color: #1a0533;
+  }
+  .flag-parade-slot img {
+    box-shadow: none;
+    filter: none;
+    outline: none;
+    border: none;
   }
   /* Plain purple blur — no gradients (avoids fade above the card) */
   .credits-backdrop {
