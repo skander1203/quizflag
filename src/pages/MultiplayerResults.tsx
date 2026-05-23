@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { Confetti } from '../components/Confetti';
 import { PlayerAvatar } from '../components/PlayerAvatar';
+import { useSounds } from '../hooks/useSounds';
 import {
   fetchPlayers,
   fetchRoom,
@@ -42,6 +43,7 @@ export function MultiplayerResults() {
   const session = getMultiplayerSession();
   const code = (codeParam ?? session?.roomCode ?? '').toUpperCase();
   const playerName = session?.playerName ?? '';
+  const { playVictory } = useSounds();
 
   const [players, setPlayers] = useState<GamePlayer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +51,7 @@ export function MultiplayerResults() {
 
   const roomSubRef = useRef<RealtimeChannel | null>(null);
   const playersSubRef = useRef<RealtimeChannel | null>(null);
+  const victoryPlayedRef = useRef(false);
 
   const rankedPlayers = useMemo(() => sortByScore(players), [players]);
   const top3 = rankedPlayers.slice(0, 3);
@@ -125,6 +128,12 @@ export function MultiplayerResults() {
       }
     };
   }, [code, navigate, applyPlayers]);
+
+  useEffect(() => {
+    if (loading || !isWinner || victoryPlayedRef.current) return;
+    victoryPlayedRef.current = true;
+    playVictory();
+  }, [loading, isWinner, playVictory]);
 
   const handleMenu = () => {
     clearMultiplayerSession();

@@ -5,6 +5,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { FlagDisplay } from '../components/FlagDisplay';
 import { Timer } from '../components/Timer';
 import { Confetti } from '../components/Confetti';
+import { useSounds } from '../hooks/useSounds';
 import {
   advanceQuestion,
   countAnswersForQuestion,
@@ -50,6 +51,7 @@ export function MultiplayerQuiz() {
   const code = (codeParam ?? session?.roomCode ?? '').toUpperCase();
   const playerName = session?.playerName ?? '';
   const isHost = session?.isHost ?? false;
+  const { playCorrect, playWrong, playTimerWarning } = useSounds();
 
   const [room, setRoom] = useState<GameRoom | null>(null);
   const [players, setPlayers] = useState<GamePlayer[]>([]);
@@ -82,6 +84,9 @@ export function MultiplayerQuiz() {
   const myPlayer = players.find((p) => p.player_name === playerName);
   const answeredCount = players.filter((p) => p.answered).length;
   const progress = (remaining / TIMER_SECONDS) * 100;
+  const timerActive = Boolean(
+    room?.status === 'playing' && question && selectedAnswer === null && !isAnswering,
+  );
 
   playersRef.current = players;
   currentIndexRef.current = currentIndex;
@@ -204,10 +209,19 @@ export function MultiplayerQuiz() {
   useEffect(() => {
     if (feedback === 'correct') {
       setShowConfetti(true);
+      playCorrect();
       const t = setTimeout(() => setShowConfetti(false), 1500);
       return () => clearTimeout(t);
     }
-  }, [feedback]);
+    if (feedback === 'wrong') {
+      playWrong();
+    }
+  }, [feedback, playCorrect, playWrong]);
+
+  useEffect(() => {
+    if (!timerActive || remaining > 3 || remaining <= 0) return;
+    playTimerWarning();
+  }, [remaining, timerActive, playTimerWarning]);
 
   const handleAnswer = useCallback(
     async (answer: string) => {
