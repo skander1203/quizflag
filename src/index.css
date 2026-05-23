@@ -7,18 +7,20 @@
 }
 
 @layer base {
+  html,
+  body {
+    background-color: #1a0533;
+    min-height: 100%;
+  }
   html {
     font-family: var(--font-sans);
     scroll-behavior: smooth;
     overflow-x: hidden;
   }
   body {
-    min-height: 100dvh;
     margin: 0;
     color: white;
     overflow-x: hidden;
-    padding-top: env(safe-area-inset-top);
-    background-color: #1a0533;
   }
   #root {
     min-height: 100dvh;
@@ -37,6 +39,8 @@
   .phone-frame {
     position: relative;
     overflow: hidden;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
     /* Mobile: fill the full screen edge-to-edge */
     @apply w-full max-w-full min-h-dvh flex flex-col mx-auto;
     /* Tablet+: centered card, never wider than the available space */

@@ -82,12 +82,23 @@ export function Results() {
           className="btn-gradient-pink"
           whileTap={{ scale: 0.95 }}
           onClick={() => {
+            dispatch({ type: 'SET_DIFFICULTY', payload: session.difficulty });
             dispatch({ type: 'START_GAME' });
             navigate('/quiz');
           }}
         >
           Rejouer
         </motion.button>
+        <button
+          type="button"
+          className="glass-card border-white/25 text-white font-extrabold min-h-[48px] tap-target"
+          onClick={() => {
+            dispatch({ type: 'CLEAR_SESSION' });
+            navigate('/');
+          }}
+        >
+          🏠 Menu
+        </button>
         <button
           type="button"
           className="btn-gradient-cyan"
