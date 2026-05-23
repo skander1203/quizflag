@@ -33,7 +33,7 @@ export function FlagDisplay({
           alt={countryName ? `Drapeau ${countryName}` : 'Drapeau'}
           cdnWidth={320}
           loading="eager"
-          className="relative w-[80%] max-w-[280px] aspect-[3/2] mx-auto bg-transparent"
+          className="relative w-[65%] max-w-[220px] aspect-[3/2] mx-auto bg-transparent"
           imgClassName="w-full h-full object-contain object-center bg-transparent rounded-lg"
           skeletonClassName="w-full h-full rounded-lg"
         />
