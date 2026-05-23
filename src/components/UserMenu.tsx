@@ -1,17 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { PlayerAvatar } from './PlayerAvatar';
 import { truncateUsername } from '../utils/username';
+import { avatarGradientClass } from '../utils/avatarColor';
 
 export function UserMenu() {
   const { username, avatarUrl, isGuest, signOut, uploadAvatar } = useAuth();
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const displayName = truncateUsername(username);
+  const initial = username.charAt(0).toUpperCase() || '?';
+  const showPhoto = Boolean(avatarUrl) && !imgError;
+
+  useEffect(() => {
+    setImgError(false);
+  }, [avatarUrl]);
 
   useEffect(() => {
     if (!open) return;
@@ -62,12 +70,29 @@ export function UserMenu() {
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        <PlayerAvatar
-          name={username}
-          avatarUrl={avatarUrl}
-          isGuest={isGuest}
-          size="sm"
-        />
+        <span
+          className={`relative z-0 w-8 h-8 rounded-full overflow-hidden shrink-0 border border-white/20 flex items-center justify-center ${
+            showPhoto
+              ? ''
+              : isGuest
+                ? 'bg-white/15'
+                : `bg-gradient-to-br ${avatarGradientClass(username)}`
+          }`}
+          aria-hidden="true"
+        >
+          {showPhoto ? (
+            <img
+              src={avatarUrl!}
+              alt=""
+              onError={() => setImgError(true)}
+              className="w-full h-full object-cover rounded-[50%]"
+            />
+          ) : isGuest ? (
+            <User className="w-[55%] h-[55%] text-white/60" strokeWidth={2.5} />
+          ) : (
+            <span className="text-sm font-extrabold text-white">{initial}</span>
+          )}
+        </span>
         <span
           className="text-white text-sm font-bold max-w-[100px]"
           title={username.length > 10 ? username : undefined}
@@ -83,7 +108,8 @@ export function UserMenu() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-48 glass-card border border-white/25 rounded-2xl overflow-hidden shadow-lg"
+            className="absolute right-0 mt-2 w-48 z-30 border border-white/25 rounded-2xl overflow-hidden shadow-lg"
+            style={{ backgroundColor: '#2d1b4e' }}
             role="menu"
           >
             {!isGuest && (
