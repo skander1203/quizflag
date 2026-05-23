@@ -12,6 +12,7 @@ import { DifficultySelect } from './pages/DifficultySelect';
 import { Quiz } from './pages/Quiz';
 import { Results } from './pages/Results';
 import { Leaderboard } from './pages/Leaderboard';
+import { Stats } from './pages/Stats';
 import { MultiplayerMenu } from './pages/MultiplayerMenu';
 import { CreateGame } from './pages/CreateGame';
 import { JoinGame } from './pages/JoinGame';
@@ -76,6 +77,7 @@ function AppContent() {
             <Route path="/quiz" element={<Quiz />} />
             <Route path="/results" element={<Results />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/stats" element={<Stats />} />
             <Route path="/multiplayer" element={<MultiplayerMenu />} />
             <Route path="/multiplayer/create" element={<CreateGame />} />
             <Route path="/multiplayer/join" element={<JoinGame />} />

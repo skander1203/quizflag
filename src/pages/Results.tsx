@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSounds } from '../hooks/useSounds';
 import { Confetti } from '../components/Confetti';
 import { saveBestScore } from '../lib/leaderboardApi';
+import { updateUserStatsAfterGame } from '../lib/statsApi';
 import {
   MAX_DISPLAY_SCORE,
   starRating,
@@ -14,7 +15,7 @@ import {
 
 export function Results() {
   const navigate = useNavigate();
-  const { isGuest } = useAuth();
+  const { isGuest, user } = useAuth();
   const { state, dispatch, startGame } = useQuiz();
   const { playVictory, withClick } = useSounds();
   const session = state.session;
@@ -30,7 +31,7 @@ export function Results() {
   }, []);
 
   useEffect(() => {
-    if (!session?.finished || isGuest) return;
+    if (!session?.finished || isGuest || !user) return;
     const playerName = state.player.name.trim();
     if (!playerName) return;
 
@@ -41,7 +42,16 @@ export function Results() {
     saveBestScore(playerName, session.score, session.difficulty).catch(() => {
       /* local leaderboard still updated via QuizContext */
     });
-  }, [session, state.player.name]);
+
+    updateUserStatsAfterGame(user.id, {
+      difficulty: session.difficulty,
+      score: session.score,
+      correctCount: session.correctCount,
+      wrongCount: session.wrongCount,
+    }).catch(() => {
+      /* stats are optional; game flow continues */
+    });
+  }, [session, state.player.name, isGuest, user]);
 
   useEffect(() => {
     if (!session?.finished || session.score <= 700 || victoryPlayedRef.current) return;

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -6,6 +7,7 @@ import { truncateUsername } from '../utils/username';
 import { avatarGradientClass } from '../utils/avatarColor';
 
 export function UserMenu() {
+  const navigate = useNavigate();
   const { username, avatarUrl, isGuest, signOut, uploadAvatar, leaveGuestForAuth } = useAuth();
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -148,6 +150,17 @@ export function UserMenu() {
                   className="w-full text-left px-4 py-3 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors disabled:opacity-50"
                 >
                   {uploading ? 'Téléversement…' : 'Changer la photo'}
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setOpen(false);
+                    navigate('/stats');
+                  }}
+                  className="w-full text-left px-4 py-3 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors"
+                >
+                  Mes Stats
                 </button>
                 <button
                   type="button"
