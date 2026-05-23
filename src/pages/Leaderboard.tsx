@@ -12,51 +12,104 @@ interface DisplayEntry {
   difficulty: Difficulty;
 }
 
-function localEntries(entries: DisplayEntry[], limit: number): DisplayEntry[] {
-  return [...entries]
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
+type LeaderboardTabId =
+  | 'global'
+  | 'facile'
+  | 'normal'
+  | 'difficile'
+  | 'extreme'
+  | 'impossible';
+
+interface LeaderboardTab {
+  id: LeaderboardTabId;
+  label: string;
+  difficulty: Difficulty | null;
+  subtitle: string;
+}
+
+const LEADERBOARD_TABS: LeaderboardTab[] = [
+  { id: 'global', label: '🌍 Global', difficulty: null, subtitle: 'Top 20 mondial' },
+  { id: 'facile', label: '😊 Facile', difficulty: 'facile', subtitle: 'Top 20 Facile' },
+  { id: 'normal', label: '🌍 Normal', difficulty: 'normal', subtitle: 'Top 20 Normal' },
+  {
+    id: 'difficile',
+    label: '🔥 Difficile',
+    difficulty: 'difficile',
+    subtitle: 'Top 20 Difficile',
+  },
+  { id: 'extreme', label: '⚡ Extrême', difficulty: 'extreme', subtitle: 'Top 20 Extrême' },
+  {
+    id: 'impossible',
+    label: '💀 Impossible',
+    difficulty: 'impossible',
+    subtitle: 'Top 20 Impossible',
+  },
+];
+
+function localEntries(
+  entries: DisplayEntry[],
+  limit: number,
+  difficulty: Difficulty | null,
+): DisplayEntry[] {
+  const filtered = difficulty
+    ? entries.filter((e) => e.difficulty === difficulty)
+    : entries;
+  return [...filtered].sort((a, b) => b.score - a.score).slice(0, limit);
 }
 
 export function Leaderboard() {
   const { state } = useQuiz();
   const playerName = state.player.name.trim();
+  const [activeTabId, setActiveTabId] = useState<LeaderboardTabId>('global');
   const [entries, setEntries] = useState<DisplayEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [usingLocalFallback, setUsingLocalFallback] = useState(false);
 
-  const loadLocalFallback = useCallback(() => {
-    const local: DisplayEntry[] = state.leaderboard.map((e) => ({
-      playerName: e.playerName,
-      score: e.score,
-      difficulty: e.difficulty,
-    }));
-    setEntries(localEntries(local, 20));
-    setUsingLocalFallback(true);
-  }, [state.leaderboard]);
+  const activeTab =
+    LEADERBOARD_TABS.find((tab) => tab.id === activeTabId) ?? LEADERBOARD_TABS[0];
 
-  const loadLeaderboard = useCallback(async () => {
-    setLoading(true);
-    try {
-      const rows = await fetchTopLeaderboard(20);
-      setEntries(
-        rows.map((r) => ({
-          playerName: r.player_name,
-          score: r.score,
-          difficulty: r.difficulty,
-        })),
-      );
-      setUsingLocalFallback(false);
-    } catch {
-      loadLocalFallback();
-    } finally {
-      setLoading(false);
-    }
-  }, [loadLocalFallback]);
+  const loadLocalFallback = useCallback(
+    (difficulty: Difficulty | null) => {
+      const local: DisplayEntry[] = state.leaderboard.map((e) => ({
+        playerName: e.playerName,
+        score: e.score,
+        difficulty: e.difficulty,
+      }));
+      setEntries(localEntries(local, 20, difficulty));
+      setUsingLocalFallback(true);
+    },
+    [state.leaderboard],
+  );
+
+  const loadLeaderboard = useCallback(
+    async (tab: LeaderboardTab) => {
+      setLoading(true);
+      try {
+        const rows = await fetchTopLeaderboard(20, tab.difficulty ?? undefined);
+        setEntries(
+          rows.map((r) => ({
+            playerName: r.player_name,
+            score: r.score,
+            difficulty: r.difficulty,
+          })),
+        );
+        setUsingLocalFallback(false);
+      } catch {
+        loadLocalFallback(tab.difficulty);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loadLocalFallback],
+  );
 
   useEffect(() => {
-    loadLeaderboard();
-  }, [loadLeaderboard]);
+    loadLeaderboard(activeTab);
+  }, [activeTab, loadLeaderboard]);
+
+  const subtitle = usingLocalFallback
+    ? '10 dernières parties (local)'
+    : activeTab.subtitle;
 
   return (
     <div className="space-y-5 pb-2">
@@ -64,16 +117,40 @@ export function Leaderboard() {
         <h1 className="text-2xl font-extrabold bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent">
           Classement
         </h1>
-        <p className="text-white/60 text-sm mt-1 font-semibold">
-          {usingLocalFallback ? '10 dernières parties (local)' : 'Top 20 mondial'}
-        </p>
+        <p className="text-white/60 text-sm mt-1 font-semibold">{subtitle}</p>
+      </div>
+
+      <div
+        className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none"
+        role="tablist"
+        aria-label="Filtres de difficulté"
+      >
+        {LEADERBOARD_TABS.map((tab) => {
+          const isActive = tab.id === activeTabId;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveTabId(tab.id)}
+              className={`shrink-0 px-4 py-2 rounded-full text-sm font-bold transition-colors whitespace-nowrap ${
+                isActive
+                  ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/25'
+                  : 'bg-transparent text-white/45 hover:text-white/70'
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex justify-end">
         <button
           type="button"
           className="text-sm font-bold text-cyan-300 hover:text-cyan-200 disabled:opacity-50 px-3 py-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/10"
-          onClick={() => loadLeaderboard()}
+          onClick={() => loadLeaderboard(activeTab)}
           disabled={loading}
           aria-label="Actualiser le classement"
         >
@@ -92,16 +169,17 @@ export function Leaderboard() {
       ) : (
         <ol className="space-y-2">
           {entries.map((entry, i) => {
-            const highlight =
-              !!playerName && entry.playerName === playerName;
+            const highlight = !!playerName && entry.playerName === playerName;
             return (
               <motion.li
-                key={`${entry.playerName}-${entry.score}-${i}`}
+                key={`${entry.playerName}-${entry.score}-${entry.difficulty}-${i}`}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.04 }}
                 className={`glass-card flex items-center gap-3 p-3 min-h-[48px] ${
-                  highlight ? 'border-pink-400/50 bg-pink-500/15' : ''
+                  highlight
+                    ? 'border-2 border-pink-400/60 border-purple-500/50 bg-pink-500/15'
+                    : ''
                 }`}
               >
                 <span className="font-extrabold text-cyan-300 w-6 shrink-0">
