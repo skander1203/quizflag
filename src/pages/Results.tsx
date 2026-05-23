@@ -32,16 +32,10 @@ export function Results() {
 
   useEffect(() => {
     if (!session?.finished || isGuest || !user) return;
-    const playerName = state.player.name.trim();
-    if (!playerName) return;
 
-    const key = `${playerName}-${session.score}-${session.difficulty}`;
+    const key = `${user.id}-${session.score}-${session.correctCount}-${session.wrongCount}-${session.difficulty}`;
     if (savedToSupabaseRef.current === key) return;
     savedToSupabaseRef.current = key;
-
-    saveBestScore(playerName, session.score, session.difficulty).catch(() => {
-      /* local leaderboard still updated via QuizContext */
-    });
 
     updateUserStatsAfterGame(user.id, {
       difficulty: session.difficulty,
@@ -51,6 +45,13 @@ export function Results() {
     }).catch(() => {
       /* stats are optional; game flow continues */
     });
+
+    const playerName = state.player.name.trim();
+    if (playerName) {
+      saveBestScore(playerName, session.score, session.difficulty).catch(() => {
+        /* local leaderboard still updated via QuizContext */
+      });
+    }
   }, [session, state.player.name, isGuest, user]);
 
   useEffect(() => {

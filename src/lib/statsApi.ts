@@ -94,7 +94,7 @@ export async function updateUserStatsAfterGame(
     updated_at: new Date().toISOString(),
   };
 
-  const { error } = await supabase.from('user_stats').upsert(payload);
+  const { error } = await supabase.from('user_stats').upsert(payload, { onConflict: 'id' });
   if (error) throw error;
 }
 
