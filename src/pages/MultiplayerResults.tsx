@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Confetti } from '../components/Confetti';
+import { PlayerAvatar } from '../components/PlayerAvatar';
+import { usePlayerAvatars } from '../hooks/usePlayerAvatars';
 import {
   fetchPlayers,
   fetchRoom,
@@ -29,6 +31,8 @@ export function MultiplayerResults() {
 
   const [players, setPlayers] = useState<GamePlayer[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const avatars = usePlayerAvatars(players.map((p) => p.player_name));
 
   useEffect(() => {
     if (!code) {
@@ -100,13 +104,20 @@ export function MultiplayerResults() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 + rankIndex * 0.15 }}
-                  className="text-center mb-2"
+                  className="text-center mb-2 flex flex-col items-center"
                 >
                   {isFirst && (
                     <span className="text-3xl block mb-1" aria-hidden="true">
                       👑
                     </span>
                   )}
+                  <PlayerAvatar
+                    name={player.player_name}
+                    avatarUrl={avatars[player.player_name]}
+                    isGuest={player.player_name === 'Invité'}
+                    size="md"
+                    className="mb-1"
+                  />
                   <p className="font-extrabold text-white text-sm truncate max-w-full px-1">
                     {player.player_name}
                   </p>
@@ -145,17 +156,25 @@ export function MultiplayerResults() {
               initial={{ opacity: 0, x: -16 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.8 + i * 0.06 }}
-              className={`flex items-center justify-between py-2 px-3 rounded-xl ${
+              className={`flex items-center gap-3 py-2 px-3 rounded-xl ${
                 player.player_name === playerName
                   ? 'bg-cyan-500/20 border border-cyan-400/30'
                   : 'bg-white/5'
               }`}
             >
-              <span className="font-bold text-white text-sm">
-                <span className="text-white/50 w-6 inline-block">{i + 1}.</span>
+              <span className="text-white/50 w-6 shrink-0 font-bold text-sm">
+                {i + 1}.
+              </span>
+              <PlayerAvatar
+                name={player.player_name}
+                avatarUrl={avatars[player.player_name]}
+                isGuest={player.player_name === 'Invité'}
+                size="xs"
+              />
+              <span className="font-bold text-white text-sm flex-1 truncate">
                 {player.player_name}
               </span>
-              <span className="font-extrabold text-cyan-300 tabular-nums text-sm">
+              <span className="font-extrabold text-cyan-300 tabular-nums text-sm shrink-0">
                 {player.score} pts
               </span>
             </motion.li>

@@ -47,13 +47,13 @@ function AuthLoading() {
 }
 
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, loading, isGuest } = useAuth();
 
   if (loading) {
     return <AuthLoading />;
   }
 
-  if (!user) {
+  if (!user && !isGuest) {
     return (
       <PhoneShell>
         <main className="flex-1 min-h-0 w-full max-w-full overflow-y-auto px-4 sm:px-5 py-4 sm:py-5">

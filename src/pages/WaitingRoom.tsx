@@ -15,6 +15,8 @@ import {
   clearMultiplayerSession,
   getMultiplayerSession,
 } from '../lib/multiplayerSession';
+import { PlayerAvatar } from '../components/PlayerAvatar';
+import { usePlayerAvatars } from '../hooks/usePlayerAvatars';
 
 export function WaitingRoom() {
   const { code: codeParam } = useParams<{ code: string }>();
@@ -27,6 +29,8 @@ export function WaitingRoom() {
   const [players, setPlayers] = useState<GamePlayer[]>([]);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const avatars = usePlayerAvatars(players.map((p) => p.player_name));
 
   useEffect(() => {
     if (!code || !session) {
@@ -145,15 +149,23 @@ export function WaitingRoom() {
                 transition={{ delay: i * 0.05 }}
                 className="flex items-center gap-3 py-2 px-3 rounded-xl bg-white/5"
               >
-                <span className="text-lg" aria-hidden="true">
-                  {player.player_name === room.host_name ? '👑' : '🎮'}
-                </span>
+                <PlayerAvatar
+                  name={player.player_name}
+                  avatarUrl={avatars[player.player_name]}
+                  isGuest={player.player_name === 'Invité'}
+                  size="sm"
+                />
                 <span className="font-bold text-white flex-1 truncate">
                   {player.player_name}
                   {player.player_name === room.host_name && (
                     <span className="text-white/50 text-xs ml-2">(hôte)</span>
                   )}
                 </span>
+                {player.player_name === room.host_name && (
+                  <span className="text-lg" aria-hidden="true">
+                    👑
+                  </span>
+                )}
               </motion.li>
             ))}
           </ul>

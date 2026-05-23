@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 type Tab = 'login' | 'register';
@@ -34,8 +35,53 @@ function Spinner() {
 const inputClass =
   'w-full px-4 py-3 rounded-2xl bg-white/10 border border-cyan-400/40 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-pink-400';
 
+function PasswordField({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  autoComplete: string;
+}) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div>
+      <label htmlFor={id} className="sr-only">
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          id={id}
+          type={visible ? 'text' : 'password'}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          className={`${inputClass} pr-12`}
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((prev) => !prev)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition-colors p-1"
+          aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+        >
+          {visible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function AuthScreen() {
-  const { signUp, signIn, resetPassword } = useAuth();
+  const { signUp, signIn, resetPassword, continueAsGuest } = useAuth();
   const [tab, setTab] = useState<Tab>('login');
   const [loginView, setLoginView] = useState<LoginView>('form');
   const [error, setError] = useState<string | null>(null);
@@ -278,17 +324,13 @@ export function AuthScreen() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="login-password" className="sr-only">
-                    Mot de passe
-                  </label>
-                  <input
+                  <PasswordField
                     id="login-password"
-                    type="password"
+                    label="Mot de passe"
                     value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
+                    onChange={setLoginPassword}
                     placeholder="Mot de passe"
                     autoComplete="current-password"
-                    className={inputClass}
                   />
                   <button
                     type="button"
@@ -351,34 +393,22 @@ export function AuthScreen() {
                   className={inputClass}
                 />
               </div>
-              <div>
-                <label htmlFor="register-password" className="sr-only">
-                  Mot de passe
-                </label>
-                <input
-                  id="register-password"
-                  type="password"
-                  value={registerPassword}
-                  onChange={(e) => setRegisterPassword(e.target.value)}
-                  placeholder="Mot de passe (min. 6 caractères)"
-                  autoComplete="new-password"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label htmlFor="register-confirm" className="sr-only">
-                  Confirmer le mot de passe
-                </label>
-                <input
-                  id="register-confirm"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirmer le mot de passe"
-                  autoComplete="new-password"
-                  className={inputClass}
-                />
-              </div>
+              <PasswordField
+                id="register-password"
+                label="Mot de passe"
+                value={registerPassword}
+                onChange={setRegisterPassword}
+                placeholder="Mot de passe (min. 6 caractères)"
+                autoComplete="new-password"
+              />
+              <PasswordField
+                id="register-confirm"
+                label="Confirmer le mot de passe"
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                placeholder="Confirmer le mot de passe"
+                autoComplete="new-password"
+              />
               {error && (
                 <p className="text-red-400 text-sm font-semibold text-center" role="alert">
                   {error}
@@ -395,6 +425,14 @@ export function AuthScreen() {
           )}
         </AnimatePresence>
       </motion.div>
+
+      <button
+        type="button"
+        onClick={continueAsGuest}
+        className="mt-6 text-center text-white/40 text-sm font-semibold hover:text-white/60 transition-colors w-full max-w-sm mx-auto"
+      >
+        Continuer sans compte →
+      </button>
     </div>
   );
 }

@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { PlayerAvatar } from './PlayerAvatar';
+import { truncateUsername } from '../utils/username';
 
 export function UserMenu() {
-  const { username, signOut } = useAuth();
+  const { username, avatarUrl, isGuest, signOut, uploadAvatar } = useAuth();
   const [open, setOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const initial = username.charAt(0).toUpperCase() || '?';
+  const displayName = truncateUsername(username);
 
   useEffect(() => {
     if (!open) return;
@@ -27,8 +31,30 @@ export function UserMenu() {
     await signOut();
   };
 
+  const handleChangePhoto = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setUploading(true);
+    await uploadAvatar(file);
+    setUploading(false);
+  };
+
   return (
     <div ref={containerRef} className="absolute top-0 right-0 z-20">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => void handleFileChange(e)}
+      />
+
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
@@ -36,13 +62,18 @@ export function UserMenu() {
         aria-expanded={open}
         aria-haspopup="menu"
       >
+        <PlayerAvatar
+          name={username}
+          avatarUrl={avatarUrl}
+          isGuest={isGuest}
+          size="sm"
+        />
         <span
-          className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-sm font-extrabold text-white shrink-0"
-          aria-hidden="true"
+          className="text-white text-sm font-bold max-w-[100px]"
+          title={username.length > 10 ? username : undefined}
         >
-          {initial}
+          {displayName}
         </span>
-        <span className="text-white text-sm font-bold max-w-[100px] truncate">{username}</span>
       </button>
 
       <AnimatePresence>
@@ -52,9 +83,20 @@ export function UserMenu() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-44 glass-card border border-white/25 rounded-2xl overflow-hidden shadow-lg"
+            className="absolute right-0 mt-2 w-48 glass-card border border-white/25 rounded-2xl overflow-hidden shadow-lg"
             role="menu"
           >
+            {!isGuest && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleChangePhoto}
+                disabled={uploading}
+                className="w-full text-left px-4 py-3 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors disabled:opacity-50"
+              >
+                {uploading ? 'Téléversement…' : 'Changer la photo'}
+              </button>
+            )}
             <button
               type="button"
               role="menuitem"

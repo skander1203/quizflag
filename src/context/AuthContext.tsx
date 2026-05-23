@@ -10,12 +10,15 @@ import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import {
   createProfile,
-  fetchUsername,
+  fetchProfile,
   isUsernameTaken,
   emailExists,
+  uploadAvatar as uploadAvatarApi,
 } from '../lib/profilesApi';
 
 const USERNAME_TAKEN_ERROR = 'Ce pseudo est déjà pris, choisissez-en un autre';
+const GUEST_STORAGE_KEY = 'quizflag_guest';
+const GUEST_USERNAME = 'Invité';
 
 function translateAuthError(message: string): string {
   const lower = message.toLowerCase();
@@ -41,6 +44,8 @@ type AuthContextValue = {
   user: User | null;
   session: Session | null;
   username: string;
+  avatarUrl: string | null;
+  isGuest: boolean;
   loading: boolean;
   signUp: (
     email: string,
@@ -49,6 +54,8 @@ type AuthContextValue = {
   ) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  continueAsGuest: () => void;
+  uploadAvatar: (file: File) => Promise<{ error: string | null }>;
   resetPassword: (email: string) => Promise<{ error: string | null; success: boolean }>;
 };
 
@@ -57,20 +64,32 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [username, setUsername] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isGuest, setIsGuest] = useState(
+    () => sessionStorage.getItem(GUEST_STORAGE_KEY) === 'true',
+  );
   const [loading, setLoading] = useState(true);
 
-  const loadUsername = useCallback(async (userId: string) => {
-    const name = await fetchUsername(userId);
-    setUsername(name);
+  const loadProfile = useCallback(async (userId: string) => {
+    const profile = await fetchProfile(userId);
+    setUsername(profile?.username ?? '');
+    setAvatarUrl(profile?.avatar_url ?? null);
   }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
       if (currentSession?.user) {
-        void loadUsername(currentSession.user.id);
+        sessionStorage.removeItem(GUEST_STORAGE_KEY);
+        setIsGuest(false);
+        void loadProfile(currentSession.user.id);
+      } else if (sessionStorage.getItem(GUEST_STORAGE_KEY) === 'true') {
+        setIsGuest(true);
+        setUsername(GUEST_USERNAME);
+        setAvatarUrl(null);
       } else {
         setUsername('');
+        setAvatarUrl(null);
       }
       setLoading(false);
     });
@@ -80,15 +99,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       if (nextSession?.user) {
-        void loadUsername(nextSession.user.id);
+        sessionStorage.removeItem(GUEST_STORAGE_KEY);
+        setIsGuest(false);
+        void loadProfile(nextSession.user.id);
+      } else if (sessionStorage.getItem(GUEST_STORAGE_KEY) === 'true') {
+        setIsGuest(true);
+        setUsername(GUEST_USERNAME);
+        setAvatarUrl(null);
       } else {
         setUsername('');
+        setAvatarUrl(null);
+        setIsGuest(false);
       }
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [loadUsername]);
+  }, [loadProfile]);
 
   const signUp = useCallback(
     async (email: string, password: string, usernameInput: string) => {
@@ -125,7 +152,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: profileError };
       }
 
+      sessionStorage.removeItem(GUEST_STORAGE_KEY);
+      setIsGuest(false);
       setUsername(trimmedUsername);
+      setAvatarUrl(null);
       return { error: null };
     },
     [],
@@ -137,15 +167,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: translateAuthError(error.message) };
     }
     if (data.user) {
-      await loadUsername(data.user.id);
+      sessionStorage.removeItem(GUEST_STORAGE_KEY);
+      setIsGuest(false);
+      await loadProfile(data.user.id);
     }
     return { error: null };
-  }, [loadUsername]);
+  }, [loadProfile]);
 
   const signOut = useCallback(async () => {
+    sessionStorage.removeItem(GUEST_STORAGE_KEY);
+    setIsGuest(false);
     await supabase.auth.signOut();
     setUsername('');
+    setAvatarUrl(null);
   }, []);
+
+  const continueAsGuest = useCallback(() => {
+    sessionStorage.setItem(GUEST_STORAGE_KEY, 'true');
+    setIsGuest(true);
+    setUsername(GUEST_USERNAME);
+    setAvatarUrl(null);
+  }, []);
+
+  const uploadAvatar = useCallback(
+    async (file: File) => {
+      const userId = session?.user?.id;
+      if (!userId || isGuest) {
+        return { error: 'Connexion requise pour changer la photo.' };
+      }
+
+      const { url, error } = await uploadAvatarApi(userId, file);
+      if (error) {
+        return { error };
+      }
+
+      if (url) {
+        setAvatarUrl(`${url}?t=${Date.now()}`);
+      }
+      return { error: null };
+    },
+    [session?.user?.id, isGuest],
+  );
 
   const resetPassword = useCallback(async (email: string) => {
     const trimmed = email.trim();
@@ -174,17 +236,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const user = session?.user ?? null;
+  const displayUsername = isGuest ? GUEST_USERNAME : username;
 
   return (
     <AuthContext.Provider
       value={{
         user,
         session,
-        username,
+        username: displayUsername,
+        avatarUrl: isGuest ? null : avatarUrl,
+        isGuest,
         loading,
         signUp,
         signIn,
         signOut,
+        continueAsGuest,
+        uploadAvatar,
         resetPassword,
       }}
     >

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
+import { useAuth } from '../context/AuthContext';
 import { Confetti } from '../components/Confetti';
 import { saveBestScore } from '../lib/leaderboardApi';
 import {
@@ -12,6 +13,7 @@ import {
 
 export function Results() {
   const navigate = useNavigate();
+  const { isGuest } = useAuth();
   const { state, dispatch, startGame } = useQuiz();
   const session = state.session;
   const savedToSupabaseRef = useRef<string | null>(null);
@@ -25,7 +27,7 @@ export function Results() {
   }, []);
 
   useEffect(() => {
-    if (!session?.finished) return;
+    if (!session?.finished || isGuest) return;
     const playerName = state.player.name.trim();
     if (!playerName) return;
 

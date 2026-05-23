@@ -4,8 +4,11 @@
 create table if not exists profiles (
   id uuid references auth.users on delete cascade primary key,
   username text unique not null,
+  avatar_url text,
   created_at timestamp default now()
 );
+
+alter table profiles add column if not exists avatar_url text;
 
 -- Case-insensitive username uniqueness
 create unique index if not exists profiles_username_lower_idx on profiles (lower(username));
@@ -20,6 +23,12 @@ create policy "Public username availability check"
 -- Authenticated users can create their own profile row
 create policy "Users insert own profile"
   on profiles for insert
+  with check (auth.uid() = id);
+
+-- Authenticated users can update their own profile row
+create policy "Users update own profile"
+  on profiles for update
+  using (auth.uid() = id)
   with check (auth.uid() = id);
 
 -- Check if an email is registered (for password reset)

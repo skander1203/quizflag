@@ -17,7 +17,7 @@ import type {
 import { generateFlagQuestions } from '../data/countries';
 import { pointsForAnswer, speedBonusPoints, QUESTIONS_PER_GAME } from '../utils/scoring';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 const STORAGE_LEADERBOARD = 'quizflag_leaderboard';
 const MAX_LEADERBOARD = 10;
@@ -138,7 +138,7 @@ const QuizContext = createContext<{
 } | null>(null);
 
 export function QuizProvider({ children }: { children: ReactNode }) {
-  const { username } = useAuth();
+  const { username, isGuest } = useAuth();
   const [leaderboard, setLeaderboard] = useLocalStorage<LeaderboardEntry[]>(
     STORAGE_LEADERBOARD,
     [],
@@ -166,7 +166,7 @@ export function QuizProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const session = state.session;
-    if (!session?.finished) return;
+    if (!session?.finished || isGuest) return;
     const key = `${session.score}-${session.correctCount}`;
     if (savedRef.current === key) return;
     savedRef.current = key;

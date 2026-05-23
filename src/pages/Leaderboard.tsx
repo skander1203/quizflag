@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
+import { useAuth } from '../context/AuthContext';
 import { fetchTopLeaderboard } from '../lib/leaderboardApi';
+import { PlayerAvatar } from '../components/PlayerAvatar';
 import type { Difficulty } from '../types';
 import { DIFFICULTY_LABELS } from '../utils/scoring';
 
@@ -10,6 +12,7 @@ interface DisplayEntry {
   playerName: string;
   score: number;
   difficulty: Difficulty;
+  avatarUrl?: string | null;
 }
 
 type LeaderboardTabId =
@@ -58,6 +61,7 @@ function localEntries(
 }
 
 export function Leaderboard() {
+  const { isGuest } = useAuth();
   const { state } = useQuiz();
   const playerName = state.player.name.trim();
   const [activeTabId, setActiveTabId] = useState<LeaderboardTabId>('global');
@@ -91,6 +95,7 @@ export function Leaderboard() {
             playerName: r.player_name,
             score: r.score,
             difficulty: r.difficulty,
+            avatarUrl: r.avatar_url,
           })),
         );
         setUsingLocalFallback(false);
@@ -104,8 +109,25 @@ export function Leaderboard() {
   );
 
   useEffect(() => {
+    if (isGuest) return;
     loadLeaderboard(activeTab);
-  }, [activeTab, loadLeaderboard]);
+  }, [activeTab, loadLeaderboard, isGuest]);
+
+  if (isGuest) {
+    return (
+      <div className="space-y-6 pb-2 text-center">
+        <h1 className="text-2xl font-extrabold bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent">
+          Classement
+        </h1>
+        <p className="glass-card p-6 text-white/70 text-sm font-semibold">
+          Créez un compte pour apparaître dans le classement
+        </p>
+        <Link to="/" className="btn-gradient-cyan block text-center">
+          Retour à l&apos;accueil
+        </Link>
+      </div>
+    );
+  }
 
   const subtitle = usingLocalFallback
     ? '10 dernières parties (local)'
@@ -185,6 +207,11 @@ export function Leaderboard() {
                 <span className="font-extrabold text-cyan-300 w-6 shrink-0">
                   {i + 1}
                 </span>
+                <PlayerAvatar
+                  name={entry.playerName}
+                  avatarUrl={entry.avatarUrl}
+                  size="xs"
+                />
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-white text-sm truncate">
                     {entry.playerName}
