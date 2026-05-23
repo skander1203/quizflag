@@ -13,7 +13,7 @@ export function NameModal({ open, onSubmit }: NameModalProps) {
 
   return (
     <div
-      className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-purple-950/90 backdrop-blur-sm rounded-[inherit]"
+      className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-[#1a0533] rounded-[inherit]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="name-modal-title"
