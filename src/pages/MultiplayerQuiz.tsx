@@ -5,7 +5,6 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { FlagDisplay } from '../components/FlagDisplay';
 import { Timer } from '../components/Timer';
 import { Confetti } from '../components/Confetti';
-import { useSyncedTimer } from '../hooks/useSyncedTimer';
 import {
   advanceQuestion,
   fetchPlayers,
@@ -52,31 +51,25 @@ export function MultiplayerQuiz() {
 
   const [room, setRoom] = useState<GameRoom | null>(null);
   const [players, setPlayers] = useState<GamePlayer[]>([]);
-  const [locked, setLocked] = useState(false);
+  const [hasAnswered, setHasAnswered] = useState(false);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [floatingBonus, setFloatingBonus] = useState<FloatingBonus | null>(null);
   const [leaderboardOpen, setLeaderboardOpen] = useState(true);
+  const [remaining, setRemaining] = useState(TIMER_SECONDS);
+
   const advancingRef = useRef(false);
   const answeredIndexRef = useRef<number | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const questionStartedAtRef = useRef(Date.now());
 
   const questions = room?.questions ?? [];
   const currentIndex = room?.current_question ?? 0;
   const question = questions[currentIndex] as FlagQuestion | undefined;
   const total = room?.question_count ?? questions.length;
   const myPlayer = players.find((p) => p.player_name === playerName);
-  const canAnswer = Boolean(
-    room?.status === 'playing' && question && !locked && !feedback && !myPlayer?.answered,
-  );
-
-  const timerActive = Boolean(canAnswer && room?.start_time);
-
-  const { remaining, progress, expired } = useSyncedTimer(
-    room?.start_time ?? null,
-    TIMER_SECONDS,
-    timerActive,
-  );
+  const progress = (remaining / TIMER_SECONDS) * 100;
+  const timerExpired = remaining <= 0;
 
   const answeredCount = players.filter((p) => p.answered).length;
 
@@ -99,7 +92,6 @@ export function MultiplayerQuiz() {
         status: roomData.status,
         currentQuestion: roomData.current_question,
         questionCount: roomData.questions?.length ?? 0,
-        startTime: roomData.start_time,
       });
 
       if (roomData.status === 'waiting') {
@@ -121,7 +113,6 @@ export function MultiplayerQuiz() {
             code,
             status: updated.status,
             currentQuestion: updated.current_question,
-            startTime: updated.start_time,
           });
           setRoom(updated);
           if (updated.status === 'finished') {
@@ -143,11 +134,27 @@ export function MultiplayerQuiz() {
   }, [code, navigate]);
 
   useEffect(() => {
-    setLocked(false);
+    setHasAnswered(false);
     setFeedback(null);
+    setRemaining(TIMER_SECONDS);
     answeredIndexRef.current = null;
     advancingRef.current = false;
+    questionStartedAtRef.current = Date.now();
+    setPlayers((prev) => prev.map((p) => ({ ...p, answered: false })));
   }, [currentIndex]);
+
+  useEffect(() => {
+    if (!room || room.status !== 'playing' || !question) return;
+
+    setRemaining(TIMER_SECONDS);
+    questionStartedAtRef.current = Date.now();
+
+    const id = window.setInterval(() => {
+      setRemaining((prev) => Math.max(0, prev - 1));
+    }, 1000);
+
+    return () => window.clearInterval(id);
+  }, [currentIndex, room?.status, question?.id]);
 
   useEffect(() => {
     if (feedback === 'correct') {
@@ -157,24 +164,14 @@ export function MultiplayerQuiz() {
     }
   }, [feedback]);
 
-  useEffect(() => {
-    if (!feedback) return;
-    const t = setTimeout(() => setFeedback(null), 1200);
-    return () => clearTimeout(t);
-  }, [feedback]);
-
   const doSubmit = useCallback(
     async (answer: string, elapsedMs: number) => {
-      if (!question || !room) {
-        console.log('[multiplayer] doSubmit blocked — missing question or room');
-        return;
-      }
-      if (answeredIndexRef.current === currentIndex) {
-        console.log('[multiplayer] doSubmit blocked — already answered question', currentIndex);
-        return;
-      }
+      if (!question || !room) return;
+      if (answeredIndexRef.current === currentIndex) return;
 
       answeredIndexRef.current = currentIndex;
+      setHasAnswered(true);
+
       const isCorrect = answer === question.correctAnswer;
       const points = pointsForAnswer(elapsedMs, isCorrect);
 
@@ -187,7 +184,6 @@ export function MultiplayerQuiz() {
       });
 
       setFeedback(isCorrect ? 'correct' : 'wrong');
-      setLocked(true);
       if (isCorrect) {
         const tier = getSpeedTier(remainingFromElapsed(elapsedMs));
         setFloatingBonus({
@@ -217,65 +213,46 @@ export function MultiplayerQuiz() {
 
   const handleAnswer = (answer: string) => {
     console.log('Answer clicked:', answer);
-    console.log('[multiplayer] handleAnswer state', {
-      locked,
-      feedback,
-      hasQuestion: Boolean(question),
-      currentIndex,
-      startTime: room?.start_time,
-      canAnswer,
-      alreadyAnswered: myPlayer?.answered,
-    });
-
-    if (locked || feedback || myPlayer?.answered) return;
     if (!question || !room) return;
+    if (hasAnswered || answeredIndexRef.current === currentIndex) return;
 
-    const startMs = room.start_time
-      ? new Date(room.start_time).getTime()
-      : Date.now();
-    const elapsedMs = room.start_time
-      ? Math.max(0, Date.now() - startMs)
-      : 0;
-
+    const elapsedMs = Math.max(0, Date.now() - questionStartedAtRef.current);
     void doSubmit(answer, elapsedMs);
   };
 
   useEffect(() => {
-    if (!expired || locked || feedback || !question || myPlayer?.answered) return;
+    if (!timerExpired || !question || !room) return;
     if (answeredIndexRef.current === currentIndex) return;
 
     console.log('[multiplayer] timer expired — auto submit', { currentIndex });
-    const elapsedMs = TIMER_SECONDS * 1000;
-    void doSubmit('', elapsedMs);
-  }, [expired, locked, feedback, question, myPlayer?.answered, currentIndex, doSubmit]);
+    void doSubmit('', TIMER_SECONDS * 1000);
+  }, [timerExpired, question, room, currentIndex, doSubmit]);
 
   useEffect(() => {
     if (!isHost || !room || room.status !== 'playing') return;
     if (advancingRef.current) return;
 
     const allAnswered = players.length > 0 && players.every((p) => p.answered);
-
-    if (allAnswered) {
-      advancingRef.current = true;
-      const t = setTimeout(() => {
-        void advanceQuestion(code, currentIndex, total).catch(() => {
-          advancingRef.current = false;
-        });
-      }, 1500);
-      return () => clearTimeout(t);
-    }
-
-    if (!expired) return;
+    const everyoneAnsweredEarly = allAnswered && remaining < TIMER_SECONDS;
+    if (!everyoneAnsweredEarly && !timerExpired) return;
 
     advancingRef.current = true;
+    const delay = everyoneAnsweredEarly && !timerExpired ? 1500 : 800;
     const t = setTimeout(() => {
-      void advanceQuestion(code, currentIndex, total).catch(() => {
+      console.log('[multiplayer] host advancing question', {
+        currentIndex,
+        total,
+        allAnswered: everyoneAnsweredEarly,
+        timerExpired,
+      });
+      void advanceQuestion(code, currentIndex, total).catch((err) => {
+        console.log('[multiplayer] advanceQuestion error', err);
         advancingRef.current = false;
       });
-    }, 2000);
+    }, delay);
 
     return () => clearTimeout(t);
-  }, [isHost, room, players, expired, code, currentIndex, total]);
+  }, [isHost, room, players, timerExpired, code, currentIndex, total]);
 
   if (!room || !question) {
     return (
@@ -344,7 +321,7 @@ export function MultiplayerQuiz() {
           </button>
         </div>
         <div className="mt-2">
-          <Timer progress={progress} remaining={Math.ceil(remaining)} />
+          <Timer progress={progress} remaining={remaining} />
         </div>
       </header>
 
@@ -422,10 +399,10 @@ export function MultiplayerQuiz() {
 
         <ul className="flex flex-col gap-2.5" role="listbox" aria-label="Réponses possibles">
           {question.options.map((opt) => (
-            <motion.li key={opt} role="option" whileTap={canAnswer ? { scale: 0.98 } : {}}>
+            <motion.li key={opt} role="option" whileTap={!hasAnswered ? { scale: 0.98 } : {}}>
               <button
                 type="button"
-                disabled={!canAnswer}
+                disabled={hasAnswered}
                 onClick={() => handleAnswer(opt)}
                 className={`answer-btn ${
                   feedback && opt === question.correctAnswer
