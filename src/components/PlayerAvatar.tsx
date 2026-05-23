@@ -42,7 +42,12 @@ export function PlayerAvatar({
           src={avatarUrl!}
           alt=""
           onError={() => setImgError(true)}
-          className="w-full h-full object-cover rounded-[50%]"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            borderRadius: '50%',
+          }}
         />
       </span>
     );

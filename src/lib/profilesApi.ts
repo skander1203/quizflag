@@ -68,19 +68,15 @@ export async function fetchProfile(userId: string): Promise<Profile | null> {
     return null;
   }
 
-  const hasAvatar = Boolean(data.avatar_url);
-  const avatar_url = hasAvatar ? buildAvatarUrl(userId) : null;
-
   console.log('[avatar] fetchProfile', {
     userId,
     username: data.username,
-    storedAvatarUrl: data.avatar_url,
-    resolvedAvatarUrl: avatar_url,
+    avatar_url: data.avatar_url,
   });
 
   return {
     username: data.username.trim(),
-    avatar_url,
+    avatar_url: data.avatar_url ?? null,
   };
 }
 
@@ -107,10 +103,7 @@ export async function fetchAvatarsByUsernames(
   }
 
   const lookup = new Map(
-    data.map((row) => [
-      row.username.toLowerCase(),
-      row.avatar_url ? buildAvatarUrl(row.id) : null,
-    ]),
+    data.map((row) => [row.username.toLowerCase(), row.avatar_url ?? null]),
   );
 
   const result: Record<string, string | null> = {};

@@ -10,7 +10,6 @@ import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import {
   createProfile,
-  buildAvatarUrl,
   isUsernameTaken,
   emailExists,
   uploadAvatar as uploadAvatarApi,
@@ -87,9 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const profileUsername = !error && data?.username ? data.username.trim() : '';
     setUsername(profileUsername || emailPrefix(authUser));
-
-    const hasAvatar = Boolean(data?.avatar_url);
-    setAvatarUrl(hasAvatar ? buildAvatarUrl(authUser.id) : null);
+    setAvatarUrl(!error && data?.avatar_url ? data.avatar_url : null);
   }, []);
 
   useEffect(() => {
@@ -230,7 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (url) {
-        setAvatarUrl(buildAvatarUrl(userId));
+        setAvatarUrl(url);
       }
       return { error: null };
     },
