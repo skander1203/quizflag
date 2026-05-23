@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { User } from 'lucide-react';
 import { avatarGradientClass } from '../utils/avatarColor';
 
@@ -16,6 +17,27 @@ const SIZE_CLASSES = {
   lg: 'w-14 h-14 text-xl',
 } as const;
 
+function LetterFallback({
+  name,
+  sizeClass,
+  className,
+}: {
+  name: string;
+  sizeClass: string;
+  className: string;
+}) {
+  const initial = name.charAt(0).toUpperCase() || '?';
+
+  return (
+    <span
+      className={`${sizeClass} rounded-full bg-gradient-to-br ${avatarGradientClass(name)} flex items-center justify-center font-extrabold text-white shrink-0 ${className}`}
+      aria-hidden="true"
+    >
+      {initial}
+    </span>
+  );
+}
+
 export function PlayerAvatar({
   name,
   avatarUrl,
@@ -24,13 +46,21 @@ export function PlayerAvatar({
   className = '',
 }: PlayerAvatarProps) {
   const sizeClass = SIZE_CLASSES[size];
-  const initial = name.charAt(0).toUpperCase() || '?';
+  const [imgError, setImgError] = useState(false);
 
-  if (avatarUrl) {
+  useEffect(() => {
+    setImgError(false);
+  }, [avatarUrl]);
+
+  if (avatarUrl && !imgError) {
     return (
       <img
         src={avatarUrl}
         alt=""
+        onError={() => {
+          console.log('[avatar] img load failed', { name, avatarUrl });
+          setImgError(true);
+        }}
         className={`${sizeClass} rounded-full object-cover shrink-0 border border-white/20 ${className}`}
       />
     );
@@ -47,12 +77,5 @@ export function PlayerAvatar({
     );
   }
 
-  return (
-    <span
-      className={`${sizeClass} rounded-full bg-gradient-to-br ${avatarGradientClass(name)} flex items-center justify-center font-extrabold text-white shrink-0 ${className}`}
-      aria-hidden="true"
-    >
-      {initial}
-    </span>
-  );
+  return <LetterFallback name={name} sizeClass={sizeClass} className={className} />;
 }

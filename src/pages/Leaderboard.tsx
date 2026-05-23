@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
 import { useAuth } from '../context/AuthContext';
 import { fetchTopLeaderboard } from '../lib/leaderboardApi';
-import { avatarGradientClass } from '../utils/avatarColor';
+import { PlayerAvatar } from '../components/PlayerAvatar';
 import type { Difficulty } from '../types';
 import { DIFFICULTY_LABELS } from '../utils/scoring';
 
@@ -109,25 +109,8 @@ export function Leaderboard() {
   );
 
   useEffect(() => {
-    if (isGuest) return;
     loadLeaderboard(activeTab);
-  }, [activeTab, loadLeaderboard, isGuest]);
-
-  if (isGuest) {
-    return (
-      <div className="space-y-6 pb-2 text-center">
-        <h1 className="text-2xl font-extrabold bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent">
-          Classement
-        </h1>
-        <p className="glass-card p-6 text-white/70 text-sm font-semibold">
-          Créez un compte pour apparaître dans le classement
-        </p>
-        <Link to="/" className="btn-gradient-cyan block text-center">
-          Retour à l&apos;accueil
-        </Link>
-      </div>
-    );
-  }
+  }, [activeTab, loadLeaderboard]);
 
   const subtitle = usingLocalFallback
     ? '10 dernières parties (local)'
@@ -135,6 +118,12 @@ export function Leaderboard() {
 
   return (
     <div className="space-y-5 pb-2">
+      {isGuest && (
+        <p className="glass-card px-3 py-2 text-white/60 text-xs font-semibold text-center border border-cyan-400/20">
+          👤 Connectez-vous pour apparaître dans le classement
+        </p>
+      )}
+
       <div className="text-center shrink-0">
         <h1 className="text-2xl font-extrabold bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent">
           Classement
@@ -191,7 +180,8 @@ export function Leaderboard() {
       ) : (
         <ol className="space-y-2">
           {entries.map((entry, i) => {
-            const highlight = !!playerName && entry.playerName === playerName;
+            const highlight =
+              !isGuest && !!playerName && entry.playerName === playerName;
             return (
               <motion.li
                 key={`${entry.playerName}-${entry.score}-${entry.difficulty}-${i}`}
@@ -207,20 +197,11 @@ export function Leaderboard() {
                 <span className="font-extrabold text-cyan-300 w-6 shrink-0">
                   {i + 1}
                 </span>
-                {entry.avatarUrl ? (
-                  <img
-                    src={entry.avatarUrl}
-                    alt=""
-                    className="w-6 h-6 rounded-full object-cover shrink-0 border border-white/20"
-                  />
-                ) : (
-                  <div
-                    className={`w-6 h-6 rounded-full bg-gradient-to-br ${avatarGradientClass(entry.playerName)} flex items-center justify-center text-[10px] font-extrabold text-white shrink-0`}
-                    aria-hidden="true"
-                  >
-                    {entry.playerName.charAt(0).toUpperCase() || '?'}
-                  </div>
-                )}
+                <PlayerAvatar
+                  name={entry.playerName}
+                  avatarUrl={entry.avatarUrl}
+                  size="xs"
+                />
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-white text-sm truncate">
                     {entry.playerName}

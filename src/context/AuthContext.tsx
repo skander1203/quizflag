@@ -202,7 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (url) {
-        setAvatarUrl(`${url}?t=${Date.now()}`);
+        setAvatarUrl(url);
       }
       return { error: null };
     },

@@ -1,10 +1,18 @@
 import { supabase } from './supabase';
 
 const AVATAR_MAX_SIZE = 200;
+const AVATAR_BUCKET = 'avatars';
 
 export interface Profile {
   username: string;
   avatar_url: string | null;
+}
+
+/** Build a public avatar URL from the user id (file: avatars/{userId}.jpg). */
+export function buildAvatarUrl(userId: string, cacheBust = true): string {
+  const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(`${userId}.jpg`);
+  const publicUrl = data.publicUrl;
+  return cacheBust ? `${publicUrl}?t=${Date.now()}` : publicUrl;
 }
 
 export async function isUsernameTaken(username: string): Promise<boolean> {
@@ -51,13 +59,28 @@ export async function fetchProfile(userId: string): Promise<Profile | null> {
     .eq('id', userId)
     .maybeSingle();
 
-  if (error || !data?.username) {
+  if (error) {
+    console.log('[avatar] fetchProfile error', { userId, error });
     return null;
   }
 
+  if (!data?.username) {
+    return null;
+  }
+
+  const hasAvatar = Boolean(data.avatar_url);
+  const avatar_url = hasAvatar ? buildAvatarUrl(userId) : null;
+
+  console.log('[avatar] fetchProfile', {
+    userId,
+    username: data.username,
+    storedAvatarUrl: data.avatar_url,
+    resolvedAvatarUrl: avatar_url,
+  });
+
   return {
     username: data.username.trim(),
-    avatar_url: data.avatar_url ?? null,
+    avatar_url,
   };
 }
 
@@ -75,13 +98,19 @@ export async function fetchAvatarsByUsernames(
   const orFilter = unique.map((u) => `username.ilike.${u}`).join(',');
   const { data, error } = await supabase
     .from('profiles')
-    .select('username, avatar_url')
+    .select('id, username, avatar_url')
     .or(orFilter);
 
-  if (error || !data) return {};
+  if (error || !data) {
+    console.log('[avatar] fetchAvatarsByUsernames error', { error });
+    return {};
+  }
 
   const lookup = new Map(
-    data.map((row) => [row.username.toLowerCase(), row.avatar_url ?? null]),
+    data.map((row) => [
+      row.username.toLowerCase(),
+      row.avatar_url ? buildAvatarUrl(row.id) : null,
+    ]),
   );
 
   const result: Record<string, string | null> = {};
@@ -140,16 +169,21 @@ export async function uploadAvatar(
     const blob = await resizeImage(file);
     const path = `${userId}.jpg`;
 
+    console.log('[avatar] uploading', { userId, path, bucket: AVATAR_BUCKET });
+
     const { error: uploadError } = await supabase.storage
-      .from('avatars')
+      .from(AVATAR_BUCKET)
       .upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
 
     if (uploadError) {
+      console.log('[avatar] upload error', uploadError);
       return { url: null, error: uploadError.message };
     }
 
-    const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+    const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
     const publicUrl = data.publicUrl;
+
+    console.log('[avatar] uploaded', { userId, path, publicUrl });
 
     const { error: updateError } = await supabase
       .from('profiles')
@@ -157,10 +191,14 @@ export async function uploadAvatar(
       .eq('id', userId);
 
     if (updateError) {
+      console.log('[avatar] profile update error', updateError);
       return { url: null, error: updateError.message };
     }
 
-    return { url: publicUrl, error: null };
+    const avatarUrl = `${publicUrl}?t=${Date.now()}`;
+    console.log('[avatar] profile updated', { avatarUrl });
+
+    return { url: avatarUrl, error: null };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Échec du téléversement.';
     return { url: null, error: message };
