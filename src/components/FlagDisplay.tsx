@@ -21,7 +21,7 @@ export function FlagDisplay({
         initial={{ opacity: 0, y: 0 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex items-center justify-center overflow-hidden w-full h-[32dvh] sm:h-[36dvh] lg:h-[38dvh]"
+        className="flex items-center justify-center w-full"
         role="img"
         aria-label={
           countryName ? `Drapeau de ${countryName}` : 'Drapeau à identifier'
@@ -33,9 +33,9 @@ export function FlagDisplay({
           alt={countryName ? `Drapeau ${countryName}` : 'Drapeau'}
           cdnWidth={320}
           loading="eager"
-          className="w-[240px] sm:w-[280px] lg:w-[300px] h-[140px] sm:h-[160px] lg:h-[170px] flex items-center justify-center"
-          imgClassName="w-full h-full rounded-2xl shadow-2xl object-contain object-center"
-          skeletonClassName="w-full h-full rounded-2xl"
+          className="relative w-full max-w-[320px] aspect-[3/2] mx-auto bg-transparent"
+          imgClassName="w-full h-full object-contain object-center bg-transparent rounded-lg"
+          skeletonClassName="w-full h-full rounded-lg"
         />
       </motion.div>
     );
