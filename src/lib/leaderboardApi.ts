@@ -1,12 +1,10 @@
 import type { Difficulty } from '../types';
 import { supabase } from './supabase';
-import { fetchAvatarsByUsernames } from './profilesApi';
 
 export interface OnlineLeaderboardRow {
   player_name: string;
   score: number;
   difficulty: Difficulty;
-  avatar_url?: string | null;
 }
 
 export async function fetchTopLeaderboard(
@@ -26,11 +24,5 @@ export async function fetchTopLeaderboard(
   const { data, error } = await query;
 
   if (error) throw error;
-  const rows = (data ?? []) as OnlineLeaderboardRow[];
-
-  const avatars = await fetchAvatarsByUsernames(rows.map((r) => r.player_name));
-  return rows.map((row) => ({
-    ...row,
-    avatar_url: avatars[row.player_name] ?? null,
-  }));
+  return (data ?? []) as OnlineLeaderboardRow[];
 }

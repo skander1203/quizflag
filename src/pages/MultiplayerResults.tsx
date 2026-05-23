@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Confetti } from '../components/Confetti';
 import { PlayerAvatar } from '../components/PlayerAvatar';
-import { usePlayerAvatars } from '../hooks/usePlayerAvatars';
 import {
   fetchPlayers,
   fetchRoom,
@@ -31,8 +30,6 @@ export function MultiplayerResults() {
 
   const [players, setPlayers] = useState<GamePlayer[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const avatars = usePlayerAvatars(players.map((p) => p.player_name));
 
   useEffect(() => {
     if (!code) {
@@ -113,7 +110,6 @@ export function MultiplayerResults() {
                   )}
                   <PlayerAvatar
                     name={player.player_name}
-                    avatarUrl={avatars[player.player_name]}
                     isGuest={player.player_name === 'Invité'}
                     size="md"
                     className="mb-1"
@@ -167,7 +163,6 @@ export function MultiplayerResults() {
               </span>
               <PlayerAvatar
                 name={player.player_name}
-                avatarUrl={avatars[player.player_name]}
                 isGuest={player.player_name === 'Invité'}
                 size="xs"
               />

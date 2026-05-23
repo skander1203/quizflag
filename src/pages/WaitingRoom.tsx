@@ -16,7 +16,6 @@ import {
   getMultiplayerSession,
 } from '../lib/multiplayerSession';
 import { PlayerAvatar } from '../components/PlayerAvatar';
-import { usePlayerAvatars } from '../hooks/usePlayerAvatars';
 
 export function WaitingRoom() {
   const { code: codeParam } = useParams<{ code: string }>();
@@ -29,8 +28,6 @@ export function WaitingRoom() {
   const [players, setPlayers] = useState<GamePlayer[]>([]);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const avatars = usePlayerAvatars(players.map((p) => p.player_name));
 
   useEffect(() => {
     if (!code || !session) {
@@ -151,7 +148,6 @@ export function WaitingRoom() {
               >
                 <PlayerAvatar
                   name={player.player_name}
-                  avatarUrl={avatars[player.player_name]}
                   isGuest={player.player_name === 'Invité'}
                   size="sm"
                 />

@@ -1,10 +1,8 @@
-import { useEffect, useState } from 'react';
 import { User } from 'lucide-react';
 import { getAvatarColor } from '../utils/avatarColor';
 
 type PlayerAvatarProps = {
   name: string;
-  avatarUrl?: string | null;
   size?: 'xs' | 'sm' | 'md' | 'lg';
   isGuest?: boolean;
   className?: string;
@@ -19,39 +17,14 @@ const SIZE_CLASSES = {
 
 export function PlayerAvatar({
   name,
-  avatarUrl,
   size = 'sm',
   isGuest = false,
   className = '',
 }: PlayerAvatarProps) {
   const sizeClass = SIZE_CLASSES[size];
-  const [imgError, setImgError] = useState(false);
   const initial = name.charAt(0).toUpperCase() || '?';
-  const showPhoto = Boolean(avatarUrl) && !imgError;
-
-  useEffect(() => {
-    setImgError(false);
-  }, [avatarUrl]);
 
   const circleClass = `${sizeClass} rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-white/20 ${className}`;
-
-  if (showPhoto) {
-    return (
-      <span className={circleClass} aria-hidden="true">
-        <img
-          src={avatarUrl!}
-          alt=""
-          onError={() => setImgError(true)}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            borderRadius: '50%',
-          }}
-        />
-      </span>
-    );
-  }
 
   if (isGuest) {
     return (

@@ -12,7 +12,6 @@ import {
   createProfile,
   isUsernameTaken,
   emailExists,
-  uploadAvatar as uploadAvatarApi,
 } from '../lib/profilesApi';
 
 const USERNAME_TAKEN_ERROR = 'Ce pseudo est déjà pris, choisissez-en un autre';
@@ -47,7 +46,6 @@ type AuthContextValue = {
   user: User | null;
   session: Session | null;
   username: string;
-  avatarUrl: string | null;
   isGuest: boolean;
   loading: boolean;
   authRedirectTab: 'login' | 'register' | null;
@@ -61,7 +59,6 @@ type AuthContextValue = {
   continueAsGuest: () => void;
   leaveGuestForAuth: (tab: 'login' | 'register') => void;
   clearAuthRedirectTab: () => void;
-  uploadAvatar: (file: File) => Promise<{ error: string | null }>;
   resetPassword: (email: string) => Promise<{ error: string | null; success: boolean }>;
 };
 
@@ -70,7 +67,6 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [username, setUsername] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(
     () => sessionStorage.getItem(GUEST_STORAGE_KEY) === 'true',
   );
@@ -80,13 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadProfile = useCallback(async (authUser: User) => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('username, avatar_url')
+      .select('username')
       .eq('id', authUser.id)
       .single();
 
     const profileUsername = !error && data?.username ? data.username.trim() : '';
     setUsername(profileUsername || emailPrefix(authUser));
-    setAvatarUrl(!error && data?.avatar_url ? data.avatar_url : null);
   }, []);
 
   useEffect(() => {
@@ -101,10 +96,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (sessionStorage.getItem(GUEST_STORAGE_KEY) === 'true') {
         setIsGuest(true);
         setUsername(GUEST_USERNAME);
-        setAvatarUrl(null);
       } else {
         setUsername('');
-        setAvatarUrl(null);
         setIsGuest(false);
       }
       if (!cancelled) {
@@ -168,7 +161,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionStorage.removeItem(GUEST_STORAGE_KEY);
       setIsGuest(false);
       setUsername(trimmedUsername);
-      setAvatarUrl(null);
       return { error: null };
     },
     [],
@@ -192,47 +184,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsGuest(false);
     await supabase.auth.signOut();
     setUsername('');
-    setAvatarUrl(null);
   }, []);
 
   const continueAsGuest = useCallback(() => {
     sessionStorage.setItem(GUEST_STORAGE_KEY, 'true');
     setIsGuest(true);
     setUsername(GUEST_USERNAME);
-    setAvatarUrl(null);
   }, []);
 
   const leaveGuestForAuth = useCallback((tab: 'login' | 'register') => {
     sessionStorage.removeItem(GUEST_STORAGE_KEY);
     setIsGuest(false);
     setUsername('');
-    setAvatarUrl(null);
     setAuthRedirectTab(tab);
   }, []);
 
   const clearAuthRedirectTab = useCallback(() => {
     setAuthRedirectTab(null);
   }, []);
-
-  const uploadAvatar = useCallback(
-    async (file: File) => {
-      const userId = session?.user?.id;
-      if (!userId || isGuest) {
-        return { error: 'Connexion requise pour changer la photo.' };
-      }
-
-      const { url, error } = await uploadAvatarApi(userId, file);
-      if (error) {
-        return { error };
-      }
-
-      if (url) {
-        setAvatarUrl(url);
-      }
-      return { error: null };
-    },
-    [session?.user?.id, isGuest],
-  );
 
   const resetPassword = useCallback(async (email: string) => {
     const trimmed = email.trim();
@@ -269,7 +238,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         session,
         username: displayUsername,
-        avatarUrl: isGuest ? null : avatarUrl,
         isGuest,
         loading,
         authRedirectTab,
@@ -279,7 +247,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         continueAsGuest,
         leaveGuestForAuth,
         clearAuthRedirectTab,
-        uploadAvatar,
         resetPassword,
       }}
     >

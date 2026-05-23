@@ -13,7 +13,6 @@ interface DisplayEntry {
   playerName: string;
   score: number;
   difficulty: Difficulty;
-  avatarUrl?: string | null;
 }
 
 type LeaderboardTabId =
@@ -97,7 +96,6 @@ export function Leaderboard() {
             playerName: r.player_name,
             score: r.score,
             difficulty: r.difficulty,
-            avatarUrl: r.avatar_url,
           })),
         );
         setUsingLocalFallback(false);
@@ -199,11 +197,7 @@ export function Leaderboard() {
                 <span className="font-extrabold text-cyan-300 w-6 shrink-0">
                   {i + 1}
                 </span>
-                <PlayerAvatar
-                  name={entry.playerName}
-                  avatarUrl={entry.avatarUrl}
-                  size="xs"
-                />
+                <PlayerAvatar name={entry.playerName} size="xs" />
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-white text-sm truncate">
                     {entry.playerName}

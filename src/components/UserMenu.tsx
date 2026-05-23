@@ -7,11 +7,9 @@ import { HEADER_USERNAME_MAX, truncateUsername } from '../utils/username';
 
 export function UserMenu() {
   const navigate = useNavigate();
-  const { username, avatarUrl, isGuest, signOut, uploadAvatar, leaveGuestForAuth } = useAuth();
+  const { username, isGuest, signOut, leaveGuestForAuth } = useAuth();
   const [open, setOpen] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const displayName = truncateUsername(username);
 
@@ -38,30 +36,8 @@ export function UserMenu() {
     leaveGuestForAuth(tab);
   };
 
-  const handleChangePhoto = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-
-    setUploading(true);
-    await uploadAvatar(file);
-    setUploading(false);
-  };
-
   return (
     <div ref={containerRef} className="absolute top-0 right-0 z-20">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => void handleFileChange(e)}
-      />
-
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
@@ -69,12 +45,7 @@ export function UserMenu() {
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        <PlayerAvatar
-          name={username}
-          avatarUrl={avatarUrl}
-          size="sm"
-          isGuest={isGuest}
-        />
+        <PlayerAvatar name={username} size="sm" isGuest={isGuest} />
         <span
           className="text-white text-sm font-bold max-w-[72px] truncate"
           title={username.length > HEADER_USERNAME_MAX ? username : undefined}
@@ -117,15 +88,6 @@ export function UserMenu() {
               </>
             ) : (
               <>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={handleChangePhoto}
-                  disabled={uploading}
-                  className="w-full text-left px-4 py-3 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors disabled:opacity-50"
-                >
-                  {uploading ? 'Téléversement…' : 'Changer la photo'}
-                </button>
                 <button
                   type="button"
                   role="menuitem"
