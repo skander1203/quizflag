@@ -1,15 +1,36 @@
 export const QUESTIONS_PER_GAME = 10;
-export const POINTS_CORRECT = 100;
-export const POINTS_SPEED_BONUS = 50;
-export const SPEED_BONUS_THRESHOLD_SEC = 3;
-export const MAX_DISPLAY_SCORE = 1000;
+export const MAX_DISPLAY_SCORE = 1500;
 export const TIMER_SECONDS = 10;
+
+export interface SpeedTier {
+  points: number;
+  label: string;
+  color: string;
+}
+
+export function remainingFromElapsed(elapsedMs: number): number {
+  return Math.max(0, TIMER_SECONDS - elapsedMs / 1000);
+}
+
+export function getSpeedTier(remainingSec: number): SpeedTier {
+  if (remainingSec > 7) {
+    return { points: 150, label: '+150 ⚡', color: '#fbbf24' };
+  }
+  if (remainingSec >= 4) {
+    return { points: 120, label: '+120 ⚡', color: '#facc15' };
+  }
+  return { points: 100, label: '+100', color: '#4ade80' };
+}
 
 export function pointsForAnswer(elapsedMs: number, correct: boolean): number {
   if (!correct) return 0;
-  const speedBonus =
-    elapsedMs < SPEED_BONUS_THRESHOLD_SEC * 1000 ? POINTS_SPEED_BONUS : 0;
-  return POINTS_CORRECT + speedBonus;
+  return getSpeedTier(remainingFromElapsed(elapsedMs)).points;
+}
+
+export function speedBonusPoints(elapsedMs: number, correct: boolean): number {
+  if (!correct) return 0;
+  const pts = pointsForAnswer(elapsedMs, correct);
+  return Math.max(0, pts - 100);
 }
 
 export function starRating(score: number): 1 | 2 | 3 {

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useQuiz } from '../context/QuizContext';
 import { useTimer } from '../hooks/useTimer';
 import { FlagDisplay } from '../components/FlagDisplay';
 import { Timer } from '../components/Timer';
 import { Confetti } from '../components/Confetti';
-import { TIMER_SECONDS } from '../utils/scoring';
+import { getSpeedTier, remainingFromElapsed, TIMER_SECONDS } from '../utils/scoring';
 import type { FlagQuestion } from '../types';
 
 /** Figé au moment de la réponse — le reducer avance l’index avant la fin du feedback. */
@@ -16,6 +16,12 @@ interface AnswerSnapshot {
   lastCorrectAnswer: string;
 }
 
+interface FloatingBonus {
+  id: number;
+  label: string;
+  color: string;
+}
+
 export function Quiz() {
   const navigate = useNavigate();
   const { state, dispatch } = useQuiz();
@@ -23,6 +29,7 @@ export function Quiz() {
   const [locked, setLocked] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [answerSnapshot, setAnswerSnapshot] = useState<AnswerSnapshot | null>(null);
+  const [floatingBonus, setFloatingBonus] = useState<FloatingBonus | null>(null);
 
   const question = session?.questions[session.currentIndex];
   const questionNum = session ? session.currentIndex + 1 : 0;
@@ -101,6 +108,10 @@ export function Quiz() {
     setLocked(true);
     lockSnapshot(question, questionNum);
     const elapsedMs = Date.now() - session.questionStartedAt;
+    if (answer === question.correctAnswer) {
+      const tier = getSpeedTier(remainingFromElapsed(elapsedMs));
+      setFloatingBonus({ id: Date.now(), label: tier.label, color: tier.color });
+    }
     dispatch({ type: 'ANSWER', payload: { answer, elapsedMs } });
   };
 
@@ -118,9 +129,27 @@ export function Quiz() {
       {/* En-tête fin */}
       <header className="shrink-0 px-4 py-2 border-b border-white/10 bg-[#1a0533]/90 backdrop-blur-sm">
         <div className="flex items-center justify-between gap-2 min-h-[40px]">
-          <span className="text-cyan-300 font-extrabold tabular-nums text-sm">
-            {session.score} pts
-          </span>
+          <div className="relative">
+            <span className="text-cyan-300 font-extrabold tabular-nums text-sm">
+              {session.score} pts
+            </span>
+            <AnimatePresence>
+              {floatingBonus && (
+                <motion.span
+                  key={floatingBonus.id}
+                  className="absolute left-0 top-0 text-2xl font-bold pointer-events-none whitespace-nowrap"
+                  style={{ color: floatingBonus.color }}
+                  initial={{ opacity: 1, y: 0 }}
+                  animate={{ opacity: 0, y: -60 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1.2, ease: 'easeOut' }}
+                  onAnimationComplete={() => setFloatingBonus(null)}
+                >
+                  {floatingBonus.label}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </div>
           <span className="text-white/80 font-bold text-sm tabular-nums">
             {displayQuestionNum} / {total}
           </span>

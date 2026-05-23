@@ -15,7 +15,7 @@ import type {
   PlayerData,
 } from '../types';
 import { generateFlagQuestions } from '../data/countries';
-import { pointsForAnswer, QUESTIONS_PER_GAME } from '../utils/scoring';
+import { pointsForAnswer, speedBonusPoints, QUESTIONS_PER_GAME } from '../utils/scoring';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const STORAGE_PLAYER = 'quizflag_player';
@@ -106,7 +106,7 @@ function reducer(state: QuizState, action: Action): QuizState {
           ? action.payload.elapsedMs
           : TIMER_ELAPSED_MAX;
       const pts = pointsForAnswer(elapsedMs, correct);
-      const speedBonus = correct && elapsedMs < 3000 ? 50 : 0;
+      const bonusPts = speedBonusPoints(elapsedMs, correct);
       const nextIndex = session.currentIndex + 1;
       const finished = nextIndex >= session.questions.length;
 
@@ -118,7 +118,7 @@ function reducer(state: QuizState, action: Action): QuizState {
           score: session.score + pts,
           correctCount: session.correctCount + (correct ? 1 : 0),
           wrongCount: session.wrongCount + (correct ? 0 : 1),
-          speedBonuses: session.speedBonuses + (speedBonus > 0 ? 1 : 0),
+          speedBonuses: session.speedBonuses + bonusPts,
           currentIndex: finished ? session.currentIndex : nextIndex,
           finished,
           questionStartedAt: Date.now(),

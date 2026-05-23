@@ -76,7 +76,7 @@ export function Results() {
       <div className="glass-card p-4 space-y-2.5 text-left">
         <Row label="Bonnes réponses" value={`${session.correctCount} / ${session.questions.length}`} good />
         <Row label="Mauvaises réponses" value={String(session.wrongCount)} />
-        <Row label="Bonus vitesse" value={`${session.speedBonuses} × 50 pts`} />
+        <Row label="Bonus vitesse" value={`+${session.speedBonuses} pts`} />
         <Row label="Difficulté" value={DIFFICULTY_LABELS[session.difficulty]} />
       </div>
 
