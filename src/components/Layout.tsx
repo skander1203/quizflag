@@ -3,9 +3,11 @@ import { PhoneShell } from './PhoneShell';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  const isQuiz = location.pathname === '/quiz';
+  const isQuiz =
+    location.pathname === '/quiz' || location.pathname.startsWith('/multiplayer/quiz');
   const isHome = location.pathname === '/';
-  const showHeader = !isQuiz && !isHome && location.pathname !== '/difficulty';
+  const isDifficulty = location.pathname === '/difficulty';
+  const showHeader = !isQuiz && !isHome && !isDifficulty;
 
   return (
     <PhoneShell>

@@ -13,22 +13,35 @@ export function Home() {
   const navigate = useNavigate();
   const { state, dispatch } = useQuiz();
   const [creditsOpen, setCreditsOpen] = useState(false);
+  const [pendingNav, setPendingNav] = useState<'solo' | 'multiplayer' | null>(null);
   const [, setStoredPlayer] = useLocalStorage<PlayerData>(STORAGE_PLAYER, {
     name: '',
   });
 
   const play = () => {
     if (!state.player.name.trim()) {
+      setPendingNav('solo');
       dispatch({ type: 'REQUEST_NAME' });
       return;
     }
     navigate('/difficulty');
   };
 
+  const multiplayer = () => {
+    if (!state.player.name.trim()) {
+      setPendingNav('multiplayer');
+      dispatch({ type: 'REQUEST_NAME' });
+      return;
+    }
+    navigate('/multiplayer');
+  };
+
   const handleName = (name: string) => {
     setStoredPlayer({ name });
     dispatch({ type: 'SET_PLAYER_NAME', payload: name });
-    navigate('/difficulty');
+    const dest = pendingNav;
+    setPendingNav(null);
+    navigate(dest === 'multiplayer' ? '/multiplayer' : '/difficulty');
   };
 
   return (
@@ -76,6 +89,17 @@ export function Home() {
             onClick={play}
           >
             Jouer
+          </motion.button>
+
+          <motion.button
+            type="button"
+            className="btn-gradient-cyan"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.94 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+            onClick={multiplayer}
+          >
+            Multijoueur
           </motion.button>
         </div>
 
