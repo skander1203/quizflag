@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSounds } from '../hooks/useSounds';
 import { Confetti } from '../components/Confetti';
 import { saveBestScore } from '../lib/leaderboardApi';
+import { fetchUsername } from '../lib/profilesApi';
 import { updateUserStatsAfterGame } from '../lib/statsApi';
 import {
   MAX_DISPLAY_SCORE,
@@ -42,17 +43,23 @@ export function Results() {
       score: session.score,
       correctCount: session.correctCount,
       wrongCount: session.wrongCount,
-    }).catch(() => {
-      /* stats are optional; game flow continues */
+    }).catch((err) => {
+      console.log('[stats] save failed', err);
     });
 
-    const playerName = state.player.name.trim();
-    if (playerName) {
-      saveBestScore(playerName, session.score, session.difficulty).catch(() => {
-        /* local leaderboard still updated via QuizContext */
-      });
-    }
-  }, [session, state.player.name, isGuest, user]);
+    void (async () => {
+      try {
+        const playerName = (await fetchUsername(user.id)).trim();
+        if (!playerName) {
+          console.log('[leaderboard] skip save: no profile username', { userId: user.id });
+          return;
+        }
+        await saveBestScore(playerName, session.score, session.difficulty);
+      } catch (err) {
+        console.log('[leaderboard] save failed', err);
+      }
+    })();
+  }, [session, isGuest, user]);
 
   useEffect(() => {
     if (!session?.finished || session.score <= 700 || victoryPlayedRef.current) return;

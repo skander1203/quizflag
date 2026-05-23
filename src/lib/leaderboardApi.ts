@@ -14,21 +14,39 @@ export async function saveBestScore(
   score: number,
   difficulty: Difficulty,
 ): Promise<void> {
+  console.log('[leaderboard] saveBestScore', { playerName, score, difficulty });
+
   const { data: existing, error: selectError } = await supabase
     .from('leaderboard')
     .select('score')
     .eq('player_name', playerName)
+    .eq('difficulty', difficulty)
     .maybeSingle();
 
-  if (selectError) throw selectError;
+  if (selectError) {
+    console.log('[leaderboard] select error', selectError);
+    throw selectError;
+  }
 
   if (existing) {
     if (score > existing.score) {
       const { error } = await supabase
         .from('leaderboard')
-        .update({ score, difficulty })
-        .eq('player_name', playerName);
-      if (error) throw error;
+        .update({ score })
+        .eq('player_name', playerName)
+        .eq('difficulty', difficulty);
+      if (error) {
+        console.log('[leaderboard] update error', error);
+        throw error;
+      }
+      console.log('[leaderboard] updated best score', { playerName, score, difficulty });
+    } else {
+      console.log('[leaderboard] score not higher, skipping update', {
+        playerName,
+        score,
+        existingScore: existing.score,
+        difficulty,
+      });
     }
   } else {
     const { error } = await supabase.from('leaderboard').insert({
@@ -36,7 +54,11 @@ export async function saveBestScore(
       score,
       difficulty,
     });
-    if (error) throw error;
+    if (error) {
+      console.log('[leaderboard] insert error', error);
+      throw error;
+    }
+    console.log('[leaderboard] inserted new entry', { playerName, score, difficulty });
   }
 }
 
