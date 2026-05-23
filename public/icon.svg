@@ -97,13 +97,10 @@
     <g clip-path="url(#globeClip)" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="2">
       <ellipse cx="256" cy="268" rx="168" ry="42"/>
       <ellipse cx="256" cy="268" rx="168" ry="84"/>
-      <ellipse cx="256" cy="268" rx="168" ry="126"/>
       <ellipse cx="256" cy="268" rx="42" ry="168"/>
       <ellipse cx="256" cy="268" rx="84" ry="168"/>
       <ellipse cx="256" cy="268" rx="126" ry="168"/>
     </g>
-
-    <circle cx="256" cy="268" r="168" fill="none" stroke="#ffffff" stroke-opacity="0.32" stroke-width="3"/>
 
     <!-- Six flag pins (20×13) -->
     <g>
